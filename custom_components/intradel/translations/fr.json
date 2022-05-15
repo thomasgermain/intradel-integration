@@ -1,0 +1,31 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "data": {
+          "password": "Mot de passe",
+          "username": "Utilisateur",
+          "town": "Commune"
+        },
+        "title": "Identifiant"
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossible de se connecter",
+      "invalid_auth": "Identifiants incorrects",
+      "unknown": "Erreur inattendue"
+    },
+    "abort": {
+      "already_configured": "Une seule instance de l'intégration authorisée"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "scan_interval": "Minutes entre chaque rafraîchissement"
+        }
+      }
+    }
+  }
+}

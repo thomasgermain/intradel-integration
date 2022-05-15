@@ -1,0 +1,6 @@
+{
+  "name": "intradel",
+  "domains": ["sensor"],
+  "render_readme": true,
+  "homeassistant": "2022.5.0"
+}
