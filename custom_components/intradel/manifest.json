@@ -4,7 +4,9 @@
   "config_flow": true,
   "documentation": "https://github.com/thomasgermain/intradel-integration",
   "issue_tracker": "https://github.com/thomasgermain/intradel-integration/issues",
-  "requirements": ["git+https://github.com/thomasgermain/pyintradel.git@v2#pyintradel==0.99"],
+  "requirements": [
+    "pyintradel==0.0.3"
+  ],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},

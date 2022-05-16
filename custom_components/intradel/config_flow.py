@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 
 from .const import CONF_TOWN, DEFAULT_SCAN_INTERVAL, DOMAIN
 
-from pyintradel.towns import TOWNS_MAP
+from pyintradel.api.towns import TOWNS_MAP
 from pyintradel.api import get_data
 
 _LOGGER = logging.getLogger(__name__)

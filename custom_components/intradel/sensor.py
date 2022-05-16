@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Mapping
 from typing import Any
 
@@ -9,12 +10,12 @@ from . import IntradelCoordinator
 from .const import ATTR_START_DATE, DOMAIN
 from homeassistant.components.sensor import (
     SensorEntity,
-    SensorStateClass,
 )
 from homeassistant.const import MASS_KILOGRAMS
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -38,6 +39,7 @@ class IntradelSensor(CoordinatorEntity, SensorEntity):
 
         super().__init__(coordinator)
         self._data = data
+        _LOGGER.debug("Received data: " + str(data))
 
     @property
     def native_value(self) -> StateType:
@@ -72,15 +74,14 @@ class IntradelSensor(CoordinatorEntity, SensorEntity):
         """Return device specific attributes."""
         if self._data.get("name") != "RECYPARC":
             return {
-                "identifiers": {(DOMAIN, self._data.get('id'))},
+                "identifiers": {(DOMAIN, self._data.get("id"))},
                 "name": self.name,
                 "manufacturer": DOMAIN,
-                "model": 'Bin',
+                "model": "Bin",
             }
         return {}
 
     @property
     def icon(self) -> str | None:
         """Return the icon to use in the frontend, if any."""
-        return "mdi:recycle" if self.name == "RECYPARC" else 'mdi:trash-can'
-
+        return "mdi:recycle" if self.name == "RECYPARC" else "mdi:trash-can"
