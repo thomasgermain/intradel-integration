@@ -39,7 +39,7 @@ class IntradelSensor(CoordinatorEntity, SensorEntity):
 
         super().__init__(coordinator)
         self._data = data
-        _LOGGER.debug("Received data: " + str(data))
+        _LOGGER.debug("Received data: %s", str(data))
 
     @property
     def native_value(self) -> StateType:
