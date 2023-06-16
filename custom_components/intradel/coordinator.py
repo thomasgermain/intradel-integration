@@ -8,7 +8,7 @@ from datetime import timedelta
 from .const import CONF_TOWN
 from homeassistant.const import CONF_USERNAME, CONF_PASSWORD
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.aiohttp_client import async_create_clientsession
 
 from pyintradel.api import get_data
 
@@ -39,7 +39,7 @@ class IntradelCoordinator(DataUpdateCoordinator):
 
     async def _fetch_data(self):
         return await get_data(
-            async_get_clientsession(self.hass),
+            async_create_clientsession(self.hass),
             self._username,
             self._password,
             self._town,
