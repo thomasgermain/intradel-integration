@@ -11,7 +11,7 @@ from .const import ATTR_START_DATE, DOMAIN
 from homeassistant.components.sensor import (
     SensorEntity,
 )
-from homeassistant.const import MASS_KILOGRAMS
+from homeassistant.const import UnitOfMass
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -49,7 +49,7 @@ class IntradelSensor(CoordinatorEntity, SensorEntity):
     @property
     def native_unit_of_measurement(self) -> str | None:
         """Return the unit of measurement of this entity, if any."""
-        return None if self.name == "RECYPARC" else MASS_KILOGRAMS
+        return None if self.name == "RECYPARC" else UnitOfMass.KILOGRAMS
 
     @property
     def name(self) -> str:
