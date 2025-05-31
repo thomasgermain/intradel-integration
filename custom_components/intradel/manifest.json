@@ -5,7 +5,7 @@
   "documentation": "https://github.com/thomasgermain/intradel-integration",
   "issue_tracker": "https://github.com/thomasgermain/intradel-integration/issues",
   "requirements": [
-    "pyintradel==0.0.3"
+    "pyintradel==0.0.4"
   ],
   "ssdp": [],
   "zeroconf": [],
@@ -14,6 +14,6 @@
   "codeowners": [
     "@thomasgermain"
   ],
-  "version": "0.0.3",
+  "version": "0.0.4",
   "iot_class": "cloud_polling"
 }
