@@ -1,0 +1,4 @@
+# Pulls in a matching Home Assistant + pytest plugins for testing custom components.
+pytest-homeassistant-custom-component
+# Runtime dependency of the integration (declared in manifest.json).
+pyintradel==0.0.6
