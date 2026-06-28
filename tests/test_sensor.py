@@ -3,7 +3,12 @@
 import copy
 from unittest.mock import AsyncMock
 
-from homeassistant.const import UnitOfMass
+from homeassistant.components.sensor import (
+    ATTR_STATE_CLASS,
+    SensorDeviceClass,
+    SensorStateClass,
+)
+from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_UNIT_OF_MEASUREMENT, UnitOfMass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -35,15 +40,23 @@ async def test_sensors_created(
 
     bin_state = hass.states.get(bin_entity)
     assert bin_state is not None
-    assert bin_state.state == "61"
-    assert bin_state.attributes["unit_of_measurement"] == UnitOfMass.KILOGRAMS
+    assert bin_state.state == "61.0"
+    assert bin_state.attributes[ATTR_UNIT_OF_MEASUREMENT] == UnitOfMass.KILOGRAMS
+    assert bin_state.attributes[ATTR_DEVICE_CLASS] == SensorDeviceClass.WEIGHT
+    assert bin_state.attributes[ATTR_STATE_CLASS] == SensorStateClass.TOTAL_INCREASING
     assert bin_state.attributes["start_date"] == "01-01-2026"
     assert len(bin_state.attributes["details"]) == 2
 
     recypark_state = hass.states.get(recypark_entity)
     assert recypark_state is not None
-    assert recypark_state.state == "1"
-    assert "unit_of_measurement" not in recypark_state.attributes
+    assert recypark_state.state == "1.0"
+    assert ATTR_UNIT_OF_MEASUREMENT not in recypark_state.attributes
+    assert ATTR_DEVICE_CLASS not in recypark_state.attributes
+    assert recypark_state.attributes[ATTR_STATE_CLASS] == SensorStateClass.TOTAL_INCREASING
+
+    # Every sensor (including recypark) is attached to its own device.
+    assert ent_reg.async_get(bin_entity).device_id is not None
+    assert ent_reg.async_get(recypark_entity).device_id is not None
 
 
 async def test_sensor_value_updates_on_refresh(
@@ -55,7 +68,7 @@ async def test_sensor_value_updates_on_refresh(
     ent_reg = await _setup(hass, mock_config_entry)
     bin_entity = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_123456")
     assert bin_entity is not None
-    assert hass.states.get(bin_entity).state == "61"
+    assert hass.states.get(bin_entity).state == "61.0"
 
     updated = copy.deepcopy(SAMPLE_DATA)
     updated[0]["total"] = "99"
@@ -64,4 +77,4 @@ async def test_sensor_value_updates_on_refresh(
     await mock_config_entry.runtime_data.async_refresh()
     await hass.async_block_till_done()
 
-    assert hass.states.get(bin_entity).state == "99"
+    assert hass.states.get(bin_entity).state == "99.0"

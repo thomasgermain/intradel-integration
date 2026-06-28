@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from collections.abc import Mapping
 from typing import Any
 
 import voluptuous as vol
@@ -85,6 +86,49 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
 
         return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA, errors=errors)
+
+    async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
+        """Handle re-authentication when Intradel rejects the stored credentials."""
+        return await self.async_step_reauth_confirm()
+
+    async def async_step_reauth_confirm(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Confirm re-authentication with new credentials (the town is kept)."""
+        errors: dict[str, str] = {}
+        reauth_entry = self._get_reauth_entry()
+        if user_input is not None:
+            try:
+                await validate_authentication(
+                    self.hass,
+                    user_input[CONF_USERNAME],
+                    user_input[CONF_PASSWORD],
+                    reauth_entry.data[CONF_TOWN],
+                )
+            except InvalidAuth:
+                errors["base"] = "invalid_auth"
+            except Exception:  # noqa: BLE001
+                _LOGGER.exception("Unexpected exception")
+                errors["base"] = "unknown"
+            else:
+                return self.async_update_reload_and_abort(
+                    reauth_entry,
+                    data_updates={
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                    },
+                )
+
+        return self.async_show_form(
+            step_id="reauth_confirm",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_USERNAME, default=reauth_entry.data[CONF_USERNAME]): str,
+                    vol.Required(CONF_PASSWORD): str,
+                }
+            ),
+            errors=errors,
+        )
 
 
 class IntradelOptionsFlowHandler(OptionsFlow):

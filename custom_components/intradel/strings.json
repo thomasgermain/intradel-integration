@@ -8,6 +8,13 @@
           "town": "Town"
         },
         "title": "Connection information for intradel"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Password",
+          "username": "Username"
+        },
+        "title": "Re-authenticate with Intradel"
       }
     },
     "error": {
@@ -16,10 +23,11 @@
       "unknown": "Unexpected error"
     },
     "abort": {
-      "already_configured": "Only one configuration is allowed"
+      "single_instance_allowed": "Only one configuration is allowed",
+      "reauth_successful": "Re-authentication was successful"
     }
   },
-   "options": {
+  "options": {
     "step": {
       "init": {
         "data": {
