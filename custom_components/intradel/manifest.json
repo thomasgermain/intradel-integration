@@ -7,6 +7,7 @@
   "integration_type": "hub",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/thomasgermain/intradel-integration/issues",
+  "loggers": ["pyintradel"],
   "requirements": ["pyintradel==0.0.6"],
   "single_config_entry": true,
   "version": "0.0.6"

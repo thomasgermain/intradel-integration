@@ -9,6 +9,7 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pyintradel.api import get_data
@@ -59,6 +60,10 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
                 self.config_entry.data[CONF_TOWN],
             )
         except ValueError as err:
-            # pyintradel raises ValueError on bad credentials or unexpected markup.
-            raise UpdateFailed(str(err)) from err
+            message = str(err.args[0]) if err.args else str(err)
+            # pyintradel signals bad credentials with this specific message;
+            # anything else is an unexpected-markup / transient scraping error.
+            if "login/password" in message:
+                raise ConfigEntryAuthFailed(message) from err
+            raise UpdateFailed(message) from err
         return data

@@ -8,6 +8,13 @@
           "town": "Commune"
         },
         "title": "Identifiant"
+      },
+      "reauth_confirm": {
+        "data": {
+          "password": "Mot de passe",
+          "username": "Utilisateur"
+        },
+        "title": "Ré-authentification auprès d'Intradel"
       }
     },
     "error": {
@@ -16,7 +23,8 @@
       "unknown": "Erreur inattendue"
     },
     "abort": {
-      "already_configured": "Une seule instance de l'intégration authorisée"
+      "single_instance_allowed": "Une seule instance de l'intégration authorisée",
+      "reauth_successful": "La ré-authentification a réussi"
     }
   },
   "options": {
