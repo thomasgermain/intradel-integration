@@ -1,19 +1,13 @@
 {
   "domain": "intradel",
   "name": "Intradel",
+  "codeowners": ["@thomasgermain"],
   "config_flow": true,
   "documentation": "https://github.com/thomasgermain/intradel-integration",
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/thomasgermain/intradel-integration/issues",
-  "requirements": [
-    "pyintradel==0.0.4"
-  ],
-  "ssdp": [],
-  "zeroconf": [],
-  "homekit": {},
-  "dependencies": [],
-  "codeowners": [
-    "@thomasgermain"
-  ],
-  "version": "0.0.4",
-  "iot_class": "cloud_polling"
+  "requirements": ["pyintradel==0.0.6"],
+  "single_config_entry": true,
+  "version": "0.0.6"
 }

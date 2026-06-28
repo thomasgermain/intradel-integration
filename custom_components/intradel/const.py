@@ -1,8 +1,10 @@
 """intradel integration constants."""
 
+from homeassistant.const import Platform
+
 DOMAIN = "intradel"
 
-PLATFORMS = ["sensor"]
+PLATFORMS = [Platform.SENSOR]
 
 DEFAULT_SCAN_INTERVAL = 720
 
