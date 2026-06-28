@@ -11,7 +11,6 @@ from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-
 from pyintradel.api import get_data
 
 from .const import CONF_TOWN, DOMAIN
@@ -52,7 +51,8 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         # from one poll to the next: start each poll from a clean jar.
         self._session.cookie_jar.clear()
         try:
-            return await get_data(
+            # pyintradel types its return as list[Any]; narrow it for consumers.
+            data: list[dict[str, Any]] = await get_data(
                 self._session,
                 self.config_entry.data[CONF_USERNAME],
                 self.config_entry.data[CONF_PASSWORD],
@@ -61,3 +61,4 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         except ValueError as err:
             # pyintradel raises ValueError on bad credentials or unexpected markup.
             raise UpdateFailed(str(err)) from err
+        return data

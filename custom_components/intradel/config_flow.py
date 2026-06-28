@@ -6,7 +6,6 @@ import logging
 from typing import Any
 
 import voluptuous as vol
-
 from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
@@ -18,7 +17,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
 from pyintradel.api import get_data
 from pyintradel.api.towns import TOWNS_MAP
 
@@ -40,9 +38,7 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str,
 
     Data has the keys from DATA_SCHEMA with values provided by the user.
     """
-    await validate_authentication(
-        hass, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_TOWN]
-    )
+    await validate_authentication(hass, data[CONF_USERNAME], data[CONF_PASSWORD], data[CONF_TOWN])
 
     return {"title": "Intradel"}
 
@@ -54,9 +50,7 @@ async def validate_authentication(
     # One-shot validation: the shared HA session is the documented tool here; the
     # actual polling uses the coordinator's own isolated session.
     try:
-        if not await get_data(
-            async_get_clientsession(hass), username, password, town
-        ):
+        if not await get_data(async_get_clientsession(hass), username, password, town):
             raise InvalidAuth
     except ValueError as err:
         _LOGGER.error("Unable to authenticate: %s", err)
@@ -75,9 +69,7 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
         """Get the options flow for this handler."""
         return IntradelOptionsFlowHandler()
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
         if user_input is not None:
@@ -92,17 +84,13 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
 
-        return self.async_show_form(
-            step_id="user", data_schema=DATA_SCHEMA, errors=errors
-        )
+        return self.async_show_form(step_id="user", data_schema=DATA_SCHEMA, errors=errors)
 
 
 class IntradelOptionsFlowHandler(OptionsFlow):
     """Handle an option flow."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle options flow."""
         if user_input is not None:
             return self.async_create_entry(data=user_input)

@@ -3,12 +3,11 @@
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.intradel.const import DEFAULT_SCAN_INTERVAL, DOMAIN
 
@@ -17,9 +16,7 @@ from .const import SAMPLE_DATA, USER_INPUT
 
 async def test_user_flow_success(hass: HomeAssistant) -> None:
     """A valid login creates the config entry."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "user"
     assert result["errors"] == {}
@@ -36,9 +33,7 @@ async def test_user_flow_success(hass: HomeAssistant) -> None:
             return_value=True,
         ) as mock_setup_entry,
     ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], USER_INPUT
-        )
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
         await hass.async_block_till_done()
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
@@ -62,9 +57,7 @@ async def test_user_flow_errors(
     expected_error: str,
 ) -> None:
     """Authentication failures keep the form open with the right error."""
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
 
     with patch(
         "custom_components.intradel.config_flow.get_data",
@@ -72,9 +65,7 @@ async def test_user_flow_errors(
         side_effect=side_effect,
         return_value=return_value,
     ):
-        result = await hass.config_entries.flow.async_configure(
-            result["flow_id"], USER_INPUT
-        )
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": expected_error}
@@ -87,9 +78,7 @@ async def test_single_instance_allowed(
     """A second config entry is rejected (single_config_entry in manifest)."""
     mock_config_entry.add_to_hass(hass)
 
-    result = await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": SOURCE_USER}
-    )
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
 
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "single_instance_allowed"

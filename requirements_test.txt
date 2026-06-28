@@ -2,3 +2,6 @@
 pytest-homeassistant-custom-component
 # Runtime dependency of the integration (declared in manifest.json).
 pyintradel==0.0.6
+# Lint and type checking.
+ruff>=0.15
+mypy>=2.1

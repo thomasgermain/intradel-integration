@@ -28,9 +28,7 @@ async def async_setup_entry(
     """Set up the intradel sensors."""
     coordinator = entry.runtime_data
     if coordinator.data:
-        async_add_entities(
-            IntradelSensor(coordinator, data["id"]) for data in coordinator.data
-        )
+        async_add_entities(IntradelSensor(coordinator, data["id"]) for data in coordinator.data)
 
 
 class IntradelSensor(CoordinatorEntity[IntradelCoordinator], SensorEntity):

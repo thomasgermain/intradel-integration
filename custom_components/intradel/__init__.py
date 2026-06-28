@@ -16,9 +16,7 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(hass: HomeAssistant, entry: IntradelConfigEntry) -> bool:
     """Set up intradel from a config entry."""
-    scan_interval = timedelta(
-        minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    )
+    scan_interval = timedelta(minutes=entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     coordinator = IntradelCoordinator(hass, entry, scan_interval)
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
@@ -29,9 +27,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IntradelConfigEntry) -> 
     return True
 
 
-async def _async_update_listener(
-    hass: HomeAssistant, entry: IntradelConfigEntry
-) -> None:
+async def _async_update_listener(hass: HomeAssistant, entry: IntradelConfigEntry) -> None:
     """Reload the entry when its options are updated."""
     await hass.config_entries.async_reload(entry.entry_id)
 

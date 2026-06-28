@@ -3,20 +3,17 @@
 import copy
 from unittest.mock import AsyncMock
 
-from pytest_homeassistant_custom_component.common import MockConfigEntry
-
 from homeassistant.const import UnitOfMass
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.intradel.const import DOMAIN
 
 from .const import SAMPLE_DATA
 
 
-async def _setup(
-    hass: HomeAssistant, entry: MockConfigEntry
-) -> er.EntityRegistry:
+async def _setup(hass: HomeAssistant, entry: MockConfigEntry) -> er.EntityRegistry:
     entry.add_to_hass(hass)
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
@@ -32,9 +29,7 @@ async def test_sensors_created(
     ent_reg = await _setup(hass, mock_config_entry)
 
     bin_entity = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_123456")
-    recypark_entity = ent_reg.async_get_entity_id(
-        "sensor", DOMAIN, f"{DOMAIN}_RECYPARC"
-    )
+    recypark_entity = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_RECYPARC")
     assert bin_entity is not None
     assert recypark_entity is not None
 
