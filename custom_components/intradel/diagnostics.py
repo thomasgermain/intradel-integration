@@ -8,10 +8,12 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
+from .const import CONF_COOKIE
 from .coordinator import IntradelConfigEntry
 
 # Credentials in the entry data, and the chip number ("id") in the scraped data.
-TO_REDACT_ENTRY = {CONF_USERNAME, CONF_PASSWORD}
+# The cookie is a live session token, at least as sensitive as the password.
+TO_REDACT_ENTRY = {CONF_USERNAME, CONF_PASSWORD, CONF_COOKIE}
 TO_REDACT_DATA = {"id"}
 
 

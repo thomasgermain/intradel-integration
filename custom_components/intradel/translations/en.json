@@ -2,6 +2,14 @@
   "config": {
     "step": {
       "user": {
+        "title": "Choose an authentication method",
+        "description": "The Intradel login form is protected by a reCAPTCHA that can reject a plain login/password request. If that happens, log in once in a regular browser and use its session cookie instead.",
+        "menu_options": {
+          "login": "Username and password",
+          "cookie": "Session cookie"
+        }
+      },
+      "login": {
         "data": {
           "password": "Password",
           "username": "Username",
@@ -9,11 +17,32 @@
         },
         "title": "Connection information for intradel"
       },
+      "cookie": {
+        "data": {
+          "cookie": "Session cookie"
+        },
+        "description": "Log in at {intradel_url} in a regular browser, then copy the value of the \"Cookie\" request header (e.g. from the browser's network inspector) and paste it here.",
+        "title": "Session cookie for intradel"
+      },
+      "reauth": {
+        "title": "Choose an authentication method",
+        "menu_options": {
+          "reauth_confirm": "Username and password",
+          "reauth_cookie": "Session cookie"
+        }
+      },
       "reauth_confirm": {
         "data": {
           "password": "Password",
           "username": "Username"
         },
+        "title": "Re-authenticate with Intradel"
+      },
+      "reauth_cookie": {
+        "data": {
+          "cookie": "Session cookie"
+        },
+        "description": "The stored session cookie was rejected. Log in again in a regular browser and paste a fresh session cookie.",
         "title": "Re-authenticate with Intradel"
       }
     },

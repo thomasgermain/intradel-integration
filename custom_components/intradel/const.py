@@ -9,6 +9,7 @@ PLATFORMS = [Platform.SENSOR]
 DEFAULT_SCAN_INTERVAL = 720
 
 CONF_TOWN = "town"
+CONF_COOKIE = "cookie"
 ATTR_START_DATE = "start_date"
 ATTR_BIN_COLLECTIONS = "collections"
 ATTR_CHIP = "chip"

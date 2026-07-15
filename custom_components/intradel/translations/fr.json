@@ -2,6 +2,14 @@
   "config": {
     "step": {
       "user": {
+        "title": "Choisissez une méthode d'authentification",
+        "description": "Le formulaire de connexion Intradel est protégé par un reCAPTCHA qui peut rejeter une simple requête identifiant/mot de passe. Si c'est le cas, connectez-vous une fois dans un navigateur classique et utilisez son cookie de session à la place.",
+        "menu_options": {
+          "login": "Identifiant et mot de passe",
+          "cookie": "Cookie de session"
+        }
+      },
+      "login": {
         "data": {
           "password": "Mot de passe",
           "username": "Utilisateur",
@@ -9,11 +17,32 @@
         },
         "title": "Identifiant"
       },
+      "cookie": {
+        "data": {
+          "cookie": "Cookie de session"
+        },
+        "description": "Connectez-vous sur {intradel_url} dans un navigateur classique, puis copiez la valeur du header de requête \"Cookie\" (par exemple depuis l'inspecteur réseau du navigateur) et collez-la ici.",
+        "title": "Cookie de session pour intradel"
+      },
+      "reauth": {
+        "title": "Choisissez une méthode d'authentification",
+        "menu_options": {
+          "reauth_confirm": "Identifiant et mot de passe",
+          "reauth_cookie": "Cookie de session"
+        }
+      },
       "reauth_confirm": {
         "data": {
           "password": "Mot de passe",
           "username": "Utilisateur"
         },
+        "title": "Ré-authentification auprès d'Intradel"
+      },
+      "reauth_cookie": {
+        "data": {
+          "cookie": "Cookie de session"
+        },
+        "description": "Le cookie de session enregistré a été rejeté. Reconnectez-vous dans un navigateur classique et collez un cookie de session récent.",
         "title": "Ré-authentification auprès d'Intradel"
       }
     },

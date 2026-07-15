@@ -9,16 +9,27 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.intradel.const import CONF_TOWN, DEFAULT_SCAN_INTERVAL, DOMAIN
+from custom_components.intradel.const import CONF_COOKIE, CONF_TOWN, DEFAULT_SCAN_INTERVAL, DOMAIN
 
-from .const import SAMPLE_DATA, USER_INPUT
+from .const import COOKIE_INPUT, SAMPLE_DATA, USER_INPUT
 
 
-async def test_user_flow_success(hass: HomeAssistant) -> None:
+async def test_user_flow_shows_menu(hass: HomeAssistant) -> None:
+    """The first step lets the user choose an authentication method."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "user"
+    assert set(result["menu_options"]) == {"login", "cookie"}
+
+
+async def test_login_flow_success(hass: HomeAssistant) -> None:
     """A valid login creates the config entry."""
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "login"}
+    )
     assert result["type"] is FlowResultType.FORM
-    assert result["step_id"] == "user"
+    assert result["step_id"] == "login"
     assert result["errors"] == {}
 
     with (
@@ -50,7 +61,7 @@ async def test_user_flow_success(hass: HomeAssistant) -> None:
         (Exception("boom"), None, "unknown"),
     ],
 )
-async def test_user_flow_errors(
+async def test_login_flow_errors(
     hass: HomeAssistant,
     side_effect: Exception | None,
     return_value: list | None,
@@ -58,6 +69,9 @@ async def test_user_flow_errors(
 ) -> None:
     """Authentication failures keep the form open with the right error."""
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "login"}
+    )
 
     with patch(
         "custom_components.intradel.config_flow.get_data",
@@ -69,6 +83,57 @@ async def test_user_flow_errors(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": expected_error}
+
+
+async def test_cookie_flow_success(hass: HomeAssistant) -> None:
+    """A valid cookie creates the config entry."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "cookie"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "cookie"
+    assert result["errors"] == {}
+
+    with (
+        patch(
+            "custom_components.intradel.config_flow.get_data",
+            new_callable=AsyncMock,
+            return_value=SAMPLE_DATA,
+        ) as mock_get_data,
+        patch(
+            "custom_components.intradel.async_setup_entry",
+            new_callable=AsyncMock,
+            return_value=True,
+        ),
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], COOKIE_INPUT)
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["title"] == "Intradel"
+    assert result["data"] == COOKIE_INPUT
+    mock_get_data.assert_called_once_with(
+        mock_get_data.call_args.args[0], None, None, None, cookie=COOKIE_INPUT[CONF_COOKIE]
+    )
+
+
+async def test_cookie_flow_invalid_auth(hass: HomeAssistant) -> None:
+    """A rejected cookie keeps the form open with an error."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "cookie"}
+    )
+
+    with patch(
+        "custom_components.intradel.config_flow.get_data",
+        new_callable=AsyncMock,
+        return_value=[],
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], COOKIE_INPUT)
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
 
 
 async def test_single_instance_allowed(
@@ -107,6 +172,19 @@ async def test_options_flow(
     assert mock_config_entry.options == {CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL + 5}
 
 
+async def test_reauth_flow_shows_menu(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Reauth offers a choice between login and cookie, regardless of the entry's mode."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    assert result["type"] is FlowResultType.MENU
+    assert result["step_id"] == "reauth"
+    assert set(result["menu_options"]) == {"reauth_confirm", "reauth_cookie"}
+
+
 async def test_reauth_flow(
     hass: HomeAssistant,
     mock_config_entry: MockConfigEntry,
@@ -115,6 +193,9 @@ async def test_reauth_flow(
     mock_config_entry.add_to_hass(hass)
 
     result = await mock_config_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "reauth_confirm"}
+    )
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "reauth_confirm"
 
@@ -145,6 +226,9 @@ async def test_reauth_flow_invalid_auth(
     mock_config_entry.add_to_hass(hass)
 
     result = await mock_config_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "reauth_confirm"}
+    )
 
     with patch(
         "custom_components.intradel.config_flow.get_data",
@@ -158,3 +242,103 @@ async def test_reauth_flow_invalid_auth(
 
     assert result["type"] is FlowResultType.FORM
     assert result["errors"] == {"base": "invalid_auth"}
+
+
+async def test_reauth_flow_cookie(hass: HomeAssistant) -> None:
+    """Re-authentication of a cookie-based entry asks for a fresh cookie."""
+    cookie_entry = MockConfigEntry(domain=DOMAIN, title="Intradel", data=COOKIE_INPUT, options={})
+    cookie_entry.add_to_hass(hass)
+
+    result = await cookie_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "reauth_cookie"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["step_id"] == "reauth_cookie"
+
+    new_cookie = {CONF_COOKIE: "PHPSESSID=fresh456"}
+    with patch(
+        "custom_components.intradel.config_flow.get_data",
+        new_callable=AsyncMock,
+        return_value=SAMPLE_DATA,
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], new_cookie)
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert cookie_entry.data == new_cookie
+
+
+async def test_reauth_flow_cookie_invalid_auth(hass: HomeAssistant) -> None:
+    """A rejected cookie during reauth keeps the form open with an error."""
+    cookie_entry = MockConfigEntry(domain=DOMAIN, title="Intradel", data=COOKIE_INPUT, options={})
+    cookie_entry.add_to_hass(hass)
+
+    result = await cookie_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "reauth_cookie"}
+    )
+
+    with patch(
+        "custom_components.intradel.config_flow.get_data",
+        new_callable=AsyncMock,
+        return_value=[],
+    ):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_COOKIE: "PHPSESSID=bad"}
+        )
+
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"base": "invalid_auth"}
+
+
+async def test_reauth_flow_switch_login_to_cookie(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+) -> None:
+    """Switching a login-based entry to a cookie during reauth drops login/password/town."""
+    mock_config_entry.add_to_hass(hass)
+
+    result = await mock_config_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "reauth_cookie"}
+    )
+
+    with patch(
+        "custom_components.intradel.config_flow.get_data",
+        new_callable=AsyncMock,
+        return_value=SAMPLE_DATA,
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], COOKIE_INPUT)
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert mock_config_entry.data == COOKIE_INPUT
+
+
+async def test_reauth_flow_switch_cookie_to_login(hass: HomeAssistant) -> None:
+    """Switching a cookie-based entry to login during reauth asks for the town."""
+    cookie_entry = MockConfigEntry(domain=DOMAIN, title="Intradel", data=COOKIE_INPUT, options={})
+    cookie_entry.add_to_hass(hass)
+
+    result = await cookie_entry.start_reauth_flow(hass)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"next_step_id": "reauth_confirm"}
+    )
+    # The entry has no known town: the full login form (including town) is shown.
+    assert result["type"] is FlowResultType.FORM
+    assert result["data_schema"].schema.keys() >= {CONF_USERNAME, CONF_PASSWORD, CONF_TOWN}
+
+    with patch(
+        "custom_components.intradel.config_flow.get_data",
+        new_callable=AsyncMock,
+        return_value=SAMPLE_DATA,
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], USER_INPUT)
+        await hass.async_block_till_done()
+
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "reauth_successful"
+    assert cookie_entry.data == USER_INPUT

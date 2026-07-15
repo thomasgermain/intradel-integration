@@ -4,13 +4,18 @@ from typing import Any
 
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 
-from custom_components.intradel.const import CONF_TOWN
+from custom_components.intradel.const import CONF_COOKIE, CONF_TOWN
 
 # Credentials/town used to build a config entry. AMAY is a real key of TOWNS_MAP.
 USER_INPUT = {
     CONF_USERNAME: "user",
     CONF_PASSWORD: "secret",
     CONF_TOWN: "AMAY",
+}
+
+# Session cookie used to build a cookie-based config entry.
+COOKIE_INPUT = {
+    CONF_COOKIE: "PHPSESSID=abc123",
 }
 
 # Shape mirrors what pyintradel.api.get_data returns (list of bin/recypark dicts).
