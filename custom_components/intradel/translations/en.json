@@ -21,7 +21,7 @@
         "data": {
           "cookie": "Session cookie"
         },
-        "description": "Log in at https://www.intradel.be/particulier/ in a regular browser, then copy the value of the \"Cookie\" request header (e.g. from the browser's network inspector) and paste it here.",
+        "description": "Log in at {intradel_url} in a regular browser, then copy the value of the \"Cookie\" request header (e.g. from the browser's network inspector) and paste it here.",
         "title": "Session cookie for intradel"
       },
       "reauth": {

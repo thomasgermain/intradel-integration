@@ -35,6 +35,8 @@ DATA_SCHEMA_LOGIN = vol.Schema(
 
 DATA_SCHEMA_COOKIE = vol.Schema({vol.Required(CONF_COOKIE): str})
 
+INTRADEL_URL = "https://www.intradel.be/particulier/"
+
 
 async def validate_authentication(
     hass: HomeAssistant,
@@ -112,7 +114,12 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 return self.async_create_entry(title="Intradel", data=user_input)
 
-        return self.async_show_form(step_id="cookie", data_schema=DATA_SCHEMA_COOKIE, errors=errors)
+        return self.async_show_form(
+            step_id="cookie",
+            data_schema=DATA_SCHEMA_COOKIE,
+            errors=errors,
+            description_placeholders={"intradel_url": INTRADEL_URL},
+        )
 
     async def async_step_reauth(self, entry_data: Mapping[str, Any]) -> ConfigFlowResult:
         """Handle re-authentication: let the user pick login or cookie.

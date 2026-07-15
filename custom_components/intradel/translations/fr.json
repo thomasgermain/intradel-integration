@@ -21,7 +21,7 @@
         "data": {
           "cookie": "Cookie de session"
         },
-        "description": "Connectez-vous sur https://www.intradel.be/particulier/ dans un navigateur classique, puis copiez la valeur du header de requête \"Cookie\" (par exemple depuis l'inspecteur réseau du navigateur) et collez-la ici.",
+        "description": "Connectez-vous sur {intradel_url} dans un navigateur classique, puis copiez la valeur du header de requête \"Cookie\" (par exemple depuis l'inspecteur réseau du navigateur) et collez-la ici.",
         "title": "Cookie de session pour intradel"
       },
       "reauth": {
