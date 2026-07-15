@@ -14,7 +14,7 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pyintradel.api import get_data
 
-from .const import CONF_TOWN, DOMAIN
+from .const import CONF_COOKIE, CONF_TOWN, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -51,18 +51,25 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         # Intradel re-authenticates on every request, so no cookie should survive
         # from one poll to the next: start each poll from a clean jar.
         self._session.cookie_jar.clear()
+        entry_data = self.config_entry.data
         try:
             # pyintradel types its return as list[Any]; narrow it for consumers.
-            data: list[dict[str, Any]] = await get_data(
-                self._session,
-                self.config_entry.data[CONF_USERNAME],
-                self.config_entry.data[CONF_PASSWORD],
-                self.config_entry.data[CONF_TOWN],
-            )
+            if CONF_COOKIE in entry_data:
+                data: list[dict[str, Any]] = await get_data(
+                    self._session, cookie=entry_data[CONF_COOKIE]
+                )
+            else:
+                data = await get_data(
+                    self._session,
+                    entry_data[CONF_USERNAME],
+                    entry_data[CONF_PASSWORD],
+                    entry_data[CONF_TOWN],
+                )
         except ValueError as err:
             message = str(err.args[0]) if err.args else str(err)
-            # pyintradel signals bad credentials with this specific message;
-            # anything else is an unexpected-markup / transient scraping error.
+            # pyintradel signals bad credentials (or a rejected/expired cookie)
+            # with this specific message; anything else is an unexpected-markup
+            # / transient scraping error.
             if "login/password" in message:
                 raise ConfigEntryAuthFailed(message) from err
             raise UpdateFailed(message) from err

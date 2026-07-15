@@ -10,7 +10,28 @@
   your `custom_components` folder.
 
 You can configure it through the UI using integration.
-You have to provide your username and password and the town (same as intradel website)
+You have to provide your username and password and the town (same as intradel website), or,
+if the intradel login form rejects a plain username/password request (it is protected by a
+reCAPTCHA), you can instead log in once in a regular browser and paste the resulting session
+cookie.
+
+### How to get the session cookie
+
+1. Open [https://www.intradel.be/particulier/](https://www.intradel.be/particulier/) in your
+   browser and log in with your username, password and town.
+2. Open the developer tools (`F12`, or right-click anywhere on the page and choose
+   **Inspect**), then go to the **Network** tab.
+3. Reload the page (`F5`) so a request to the site shows up in the list.
+4. Click on the first request (e.g. `particulier` or `data.php`), open its **Headers**, and
+   find the **Cookie** header under **Request Headers**.
+
+   ![Where to find the Cookie request header in the browser's network inspector](docs/images/cookie-devtools.png)
+
+5. Copy the full value of that header and paste it in the `Session cookie` field of the
+   integration configuration.
+
+The cookie is a session token: if it expires, the integration will ask you to repeat these
+steps to provide a fresh one.
 
 ## Provided entities
 
