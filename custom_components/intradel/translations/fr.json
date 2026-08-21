@@ -35,7 +35,10 @@
           "household_size": "Personnes dans le ménage",
           "quota_organic_kg": "Quota organique (kg par personne et par an)",
           "quota_residual_kg": "Quota résiduel (kg par personne et par an)",
-          "max_collections": "Nombre maximum de vidanges par an"
+          "max_collections": "Nombre maximum de vidanges par an",
+          "annual_fee": "Forfait annuel",
+          "price_organic_kg": "Prix organique par kg",
+          "price_residual_kg": "Prix résiduel par kg"
         }
       }
     }
@@ -57,6 +60,52 @@
           "name": "Cookie de session",
           "description": "La valeur de l'en-tête de requête Cookie, par ex. PHPSESSID=..."
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost": {
+        "name": "Coût"
+      },
+      "quota_used": {
+        "name": "Quota utilisé"
+      },
+      "quota_remaining": {
+        "name": "Quota restant"
+      },
+      "collections": {
+        "name": "Vidanges"
+      },
+      "collections_remaining": {
+        "name": "Vidanges restantes"
+      },
+      "collections_used": {
+        "name": "Quota de vidanges utilisé"
+      },
+      "average_per_collection": {
+        "name": "Moyenne par vidange"
+      },
+      "projected_weight": {
+        "name": "Poids projeté en fin d'année"
+      },
+      "days_since_last_collection": {
+        "name": "Jours depuis la dernière vidange"
+      },
+      "total_cost": {
+        "name": "Coût total"
+      },
+      "total_weight": {
+        "name": "Poids total"
+      },
+      "total_collections": {
+        "name": "Vidanges totales"
+      },
+      "total_collections_remaining": {
+        "name": "Vidanges totales restantes"
+      },
+      "recyparc_volume": {
+        "name": "Volume recyparc"
       }
     }
   }

@@ -35,7 +35,10 @@
           "household_size": "People in the household",
           "quota_organic_kg": "Organic waste quota (kg per person per year)",
           "quota_residual_kg": "Residual waste quota (kg per person per year)",
-          "max_collections": "Maximum bin collections per year"
+          "max_collections": "Maximum bin collections per year",
+          "annual_fee": "Annual fee",
+          "price_organic_kg": "Organic waste price per kg",
+          "price_residual_kg": "Residual waste price per kg"
         }
       }
     }
@@ -57,6 +60,52 @@
           "name": "Session cookie",
           "description": "The value of the Cookie request header, e.g. PHPSESSID=..."
         }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "cost": {
+        "name": "Cost"
+      },
+      "quota_used": {
+        "name": "Quota used"
+      },
+      "quota_remaining": {
+        "name": "Quota remaining"
+      },
+      "collections": {
+        "name": "Collections"
+      },
+      "collections_remaining": {
+        "name": "Collections remaining"
+      },
+      "collections_used": {
+        "name": "Collection allowance used"
+      },
+      "average_per_collection": {
+        "name": "Average per collection"
+      },
+      "projected_weight": {
+        "name": "Projected weight at year end"
+      },
+      "days_since_last_collection": {
+        "name": "Days since last collection"
+      },
+      "total_cost": {
+        "name": "Total cost"
+      },
+      "total_weight": {
+        "name": "Total weight"
+      },
+      "total_collections": {
+        "name": "Total collections"
+      },
+      "total_collections_remaining": {
+        "name": "Total collections remaining"
+      },
+      "recyparc_volume": {
+        "name": "Recypark volume"
       }
     }
   }

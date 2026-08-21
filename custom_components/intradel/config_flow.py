@@ -28,15 +28,21 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from pyintradel.api import get_data
 
 from .const import (
+    CONF_ANNUAL_FEE,
     CONF_COOKIE,
     CONF_HOUSEHOLD_SIZE,
     CONF_KEEPALIVE_INTERVAL,
     CONF_MAX_COLLECTIONS,
+    CONF_PRICE_ORGANIC_KG,
+    CONF_PRICE_RESIDUAL_KG,
     CONF_QUOTA_ORGANIC_KG,
     CONF_QUOTA_RESIDUAL_KG,
+    DEFAULT_ANNUAL_FEE,
     DEFAULT_HOUSEHOLD_SIZE,
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_MAX_COLLECTIONS,
+    DEFAULT_PRICE_ORGANIC_KG,
+    DEFAULT_PRICE_RESIDUAL_KG,
     DEFAULT_QUOTA_ORGANIC_KG,
     DEFAULT_QUOTA_RESIDUAL_KG,
     DEFAULT_SCAN_INTERVAL,
@@ -159,6 +165,20 @@ class IntradelOptionsFlowHandler(OptionsFlow):
                     CONF_MAX_COLLECTIONS,
                     default=options.get(CONF_MAX_COLLECTIONS, DEFAULT_MAX_COLLECTIONS),
                 ): cv.positive_int,
+                # Rates charged beyond the quotas. Left at 0 the cost sensors
+                # simply read zero, so they are safe to ignore.
+                vol.Optional(
+                    CONF_ANNUAL_FEE,
+                    default=options.get(CONF_ANNUAL_FEE, DEFAULT_ANNUAL_FEE),
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_PRICE_ORGANIC_KG,
+                    default=options.get(CONF_PRICE_ORGANIC_KG, DEFAULT_PRICE_ORGANIC_KG),
+                ): vol.Coerce(float),
+                vol.Optional(
+                    CONF_PRICE_RESIDUAL_KG,
+                    default=options.get(CONF_PRICE_RESIDUAL_KG, DEFAULT_PRICE_RESIDUAL_KG),
+                ): vol.Coerce(float),
             }
         )
         return self.async_show_form(step_id="init", data_schema=data_schema)

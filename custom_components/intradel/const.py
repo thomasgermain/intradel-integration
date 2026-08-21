@@ -21,6 +21,18 @@ CONF_QUOTA_ORGANIC_KG = "quota_organic_kg"
 CONF_QUOTA_RESIDUAL_KG = "quota_residual_kg"
 CONF_MAX_COLLECTIONS = "max_collections"
 
+# Prices charged beyond the quotas, and the fixed yearly fee. Defaults are 0 so
+# the cost sensors read zero until the town's real rates are entered.
+CONF_ANNUAL_FEE = "annual_fee"
+CONF_PRICE_ORGANIC_KG = "price_organic_kg"
+CONF_PRICE_RESIDUAL_KG = "price_residual_kg"
+DEFAULT_ANNUAL_FEE = 0.0
+DEFAULT_PRICE_ORGANIC_KG = 0.0
+DEFAULT_PRICE_RESIDUAL_KG = 0.0
+
+# Currency of every cost sensor.
+CURRENCY = "EUR"
+
 # Minutes between session keep-alive pings for cookie-based entries; 0 disables.
 CONF_KEEPALIVE_INTERVAL = "keepalive_interval"
 DEFAULT_KEEPALIVE_INTERVAL = 15
