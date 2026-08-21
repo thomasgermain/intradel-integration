@@ -14,10 +14,13 @@ from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.intradel.const import (
+    CONF_ANNUAL_FEE,
     CONF_COOKIE,
     CONF_HOUSEHOLD_SIZE,
     CONF_KEEPALIVE_INTERVAL,
     CONF_MAX_COLLECTIONS,
+    CONF_PRICE_ORGANIC_KG,
+    CONF_PRICE_RESIDUAL_KG,
     CONF_QUOTA_ORGANIC_KG,
     CONF_QUOTA_RESIDUAL_KG,
     DEFAULT_SCAN_INTERVAL,
@@ -181,6 +184,9 @@ async def test_options_flow(
         CONF_QUOTA_ORGANIC_KG: 25.0,
         CONF_QUOTA_RESIDUAL_KG: 50.0,
         CONF_MAX_COLLECTIONS: 30,
+        CONF_ANNUAL_FEE: 60.0,
+        CONF_PRICE_ORGANIC_KG: 0.10,
+        CONF_PRICE_RESIDUAL_KG: 0.22,
     }
     result = await hass.config_entries.options.async_configure(result["flow_id"], user_input)
     await hass.async_block_till_done()

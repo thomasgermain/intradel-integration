@@ -210,7 +210,9 @@ ACCOUNT_SENSORS: tuple[IntradelAccountSensorDescription, ...] = (
         key="recyparc_volume",
         translation_key="recyparc_volume",
         device_class=SensorDeviceClass.VOLUME,
-        state_class=SensorStateClass.MEASUREMENT,
+        # Home Assistant rejects MEASUREMENT for a volume: this accumulates over
+        # the year and resets on 1 January, which is what TOTAL_INCREASING means.
+        state_class=SensorStateClass.TOTAL_INCREASING,
         native_unit_of_measurement=UnitOfVolume.CUBIC_METERS,
         icon="mdi:recycle",
         value_fn=lambda account, _cost, _max: (
