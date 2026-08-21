@@ -2,48 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Choisissez une méthode d'authentification",
-        "description": "Le formulaire de connexion Intradel est protégé par un reCAPTCHA qui peut rejeter une simple requête identifiant/mot de passe. Si c'est le cas, connectez-vous une fois dans un navigateur classique et utilisez son cookie de session à la place.",
-        "menu_options": {
-          "login": "Identifiant et mot de passe",
-          "cookie": "Cookie de session"
-        }
-      },
-      "login": {
-        "data": {
-          "password": "Mot de passe",
-          "username": "Utilisateur",
-          "town": "Commune"
-        },
-        "title": "Identifiant"
-      },
-      "cookie": {
+        "title": "Cookie de session pour Intradel",
+        "description": "Le formulaire de connexion Intradel est protégé par un reCAPTCHA vérifié côté serveur : un identifiant et un mot de passe ne peuvent donc pas être utilisés ici. Connectez-vous sur {intradel_url} dans un navigateur classique, puis copiez la valeur de l'en-tête de requête « Cookie » et collez-la ci-dessous.",
         "data": {
           "cookie": "Cookie de session"
-        },
-        "description": "Connectez-vous sur {intradel_url} dans un navigateur classique, puis copiez la valeur du header de requête \"Cookie\" (par exemple depuis l'inspecteur réseau du navigateur) et collez-la ici.",
-        "title": "Cookie de session pour intradel"
-      },
-      "reauth": {
-        "title": "Choisissez une méthode d'authentification",
-        "menu_options": {
-          "reauth_confirm": "Identifiant et mot de passe",
-          "reauth_cookie": "Cookie de session"
         }
       },
       "reauth_confirm": {
-        "data": {
-          "password": "Mot de passe",
-          "username": "Utilisateur"
-        },
-        "title": "Ré-authentification auprès d'Intradel"
-      },
-      "reauth_cookie": {
+        "title": "Ré-authentification Intradel",
+        "description": "Le cookie de session enregistré n'est plus valide. Reconnectez-vous sur {intradel_url} dans un navigateur classique et collez un nouveau cookie.",
         "data": {
           "cookie": "Cookie de session"
-        },
-        "description": "Le cookie de session enregistré a été rejeté. Reconnectez-vous dans un navigateur classique et collez un cookie de session récent.",
-        "title": "Ré-authentification auprès d'Intradel"
+        }
       }
     },
     "error": {
@@ -60,7 +30,32 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Minutes entre chaque rafraîchissement"
+          "scan_interval": "Minutes entre deux relevés",
+          "keepalive_interval": "Minutes entre deux pings de maintien de session (0 pour désactiver)",
+          "household_size": "Personnes dans le ménage",
+          "quota_organic_kg": "Quota organique (kg par personne et par an)",
+          "quota_residual_kg": "Quota résiduel (kg par personne et par an)",
+          "max_collections": "Nombre maximum de vidanges par an"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "empty_cookie": {
+      "message": "Le cookie de session ne peut pas être vide."
+    },
+    "invalid_cookie": {
+      "message": "Intradel a rejeté ce cookie de session. Reconnectez-vous dans votre navigateur et capturez-en un nouveau."
+    }
+  },
+  "services": {
+    "set_cookie": {
+      "name": "Définir le cookie de session",
+      "description": "Remplace le cookie de session Intradel enregistré par un cookie capturé depuis un navigateur déjà connecté.",
+      "fields": {
+        "cookie": {
+          "name": "Cookie de session",
+          "description": "La valeur de l'en-tête de requête Cookie, par ex. PHPSESSID=..."
         }
       }
     }

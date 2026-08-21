@@ -2,48 +2,18 @@
   "config": {
     "step": {
       "user": {
-        "title": "Choose an authentication method",
-        "description": "The Intradel login form is protected by a reCAPTCHA that can reject a plain login/password request. If that happens, log in once in a regular browser and use its session cookie instead.",
-        "menu_options": {
-          "login": "Username and password",
-          "cookie": "Session cookie"
-        }
-      },
-      "login": {
-        "data": {
-          "password": "Password",
-          "username": "Username",
-          "town": "Town"
-        },
-        "title": "Connection information for intradel"
-      },
-      "cookie": {
+        "title": "Session cookie for Intradel",
+        "description": "The Intradel login form is protected by a reCAPTCHA that the site verifies server-side, so a username and password cannot be used here. Log in at {intradel_url} in a regular browser, then copy the value of the \"Cookie\" request header and paste it below.",
         "data": {
           "cookie": "Session cookie"
-        },
-        "description": "Log in at {intradel_url} in a regular browser, then copy the value of the \"Cookie\" request header (e.g. from the browser's network inspector) and paste it here.",
-        "title": "Session cookie for intradel"
-      },
-      "reauth": {
-        "title": "Choose an authentication method",
-        "menu_options": {
-          "reauth_confirm": "Username and password",
-          "reauth_cookie": "Session cookie"
         }
       },
       "reauth_confirm": {
-        "data": {
-          "password": "Password",
-          "username": "Username"
-        },
-        "title": "Re-authenticate with Intradel"
-      },
-      "reauth_cookie": {
+        "title": "Re-authenticate with Intradel",
+        "description": "The stored session cookie is no longer valid. Log in again at {intradel_url} in a regular browser and paste a fresh session cookie.",
         "data": {
           "cookie": "Session cookie"
-        },
-        "description": "The stored session cookie was rejected. Log in again in a regular browser and paste a fresh session cookie.",
-        "title": "Re-authenticate with Intradel"
+        }
       }
     },
     "error": {
@@ -60,7 +30,32 @@
     "step": {
       "init": {
         "data": {
-          "scan_interval": "Minutes between scans"
+          "scan_interval": "Minutes between scans",
+          "keepalive_interval": "Minutes between session keep-alive pings (0 to disable)",
+          "household_size": "People in the household",
+          "quota_organic_kg": "Organic waste quota (kg per person per year)",
+          "quota_residual_kg": "Residual waste quota (kg per person per year)",
+          "max_collections": "Maximum bin collections per year"
+        }
+      }
+    }
+  },
+  "exceptions": {
+    "empty_cookie": {
+      "message": "The session cookie cannot be empty."
+    },
+    "invalid_cookie": {
+      "message": "Intradel rejected this session cookie. Log in again in your browser and capture a fresh one."
+    }
+  },
+  "services": {
+    "set_cookie": {
+      "name": "Set session cookie",
+      "description": "Replaces the stored Intradel session cookie with one captured from a browser that is already logged in.",
+      "fields": {
+        "cookie": {
+          "name": "Session cookie",
+          "description": "The value of the Cookie request header, e.g. PHPSESSID=..."
         }
       }
     }

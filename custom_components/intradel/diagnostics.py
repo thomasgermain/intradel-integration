@@ -11,8 +11,9 @@ from homeassistant.core import HomeAssistant
 from .const import CONF_COOKIE
 from .coordinator import IntradelConfigEntry
 
-# Credentials in the entry data, and the chip number ("id") in the scraped data.
-# The cookie is a live session token, at least as sensitive as the password.
+# The cookie is a live session token and the only credential the integration
+# still uses; username and password are redacted too because entries created
+# before the login/password method was removed may still carry them.
 TO_REDACT_ENTRY = {CONF_USERNAME, CONF_PASSWORD, CONF_COOKIE}
 TO_REDACT_DATA = {"id"}
 
