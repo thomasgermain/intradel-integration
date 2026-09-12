@@ -45,6 +45,7 @@ async def ping_session(session: aiohttp.ClientSession, cookie: str) -> bool:
             DATA_URL, headers={"Cookie": cookie}, allow_redirects=False
         ) as resp:
             if resp.status == 200:
+                _LOGGER.debug("Intradel session ping returned %s: session still valid", resp.status)
                 return True
             _LOGGER.debug("Intradel session ping returned %s: session expired", resp.status)
             return False
