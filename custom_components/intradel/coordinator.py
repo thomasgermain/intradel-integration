@@ -6,15 +6,15 @@ import logging
 from datetime import timedelta
 from typing import Any
 
+from aiohttp import ClientSession
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pyintradel.api import get_data
 
-from .const import CONF_COOKIE, CONF_TOWN, DOMAIN
+from .const import CONF_COOKIE, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -46,25 +46,27 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         # unload (and on setup-failure cleanup) -- we must not close it ourselves.
         self._session = async_create_clientsession(hass)
 
+    @property
+    def session(self) -> ClientSession:
+        """The coordinator's own aiohttp session, reused by the keep-alive."""
+        return self._session
+
     async def _async_update_data(self) -> list[dict[str, Any]]:
         """Fetch data from intradel."""
         # Intradel re-authenticates on every request, so no cookie should survive
         # from one poll to the next: start each poll from a clean jar.
         self._session.cookie_jar.clear()
-        entry_data = self.config_entry.data
+        cookie = self.config_entry.data.get(CONF_COOKIE)
+        if not cookie:
+            # An entry created before the login/password method was removed. That
+            # method can no longer authenticate (the site verifies an invisible
+            # reCAPTCHA server-side), so ask for a session cookie instead.
+            raise ConfigEntryAuthFailed(
+                "Intradel now requires a session cookie; please re-authenticate"
+            )
         try:
             # pyintradel types its return as list[Any]; narrow it for consumers.
-            if CONF_COOKIE in entry_data:
-                data: list[dict[str, Any]] = await get_data(
-                    self._session, cookie=entry_data[CONF_COOKIE]
-                )
-            else:
-                data = await get_data(
-                    self._session,
-                    entry_data[CONF_USERNAME],
-                    entry_data[CONF_PASSWORD],
-                    entry_data[CONF_TOWN],
-                )
+            data: list[dict[str, Any]] = await get_data(self._session, cookie=cookie)
         except ValueError as err:
             message = str(err.args[0]) if err.args else str(err)
             # pyintradel signals bad credentials (or a rejected/expired cookie)
