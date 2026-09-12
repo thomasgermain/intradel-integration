@@ -10,5 +10,5 @@
   "loggers": ["pyintradel"],
   "requirements": ["pyintradel==0.0.7"],
   "single_config_entry": true,
-  "version": "0.1.0b"
+  "version": "0.1.0b1"
 }
