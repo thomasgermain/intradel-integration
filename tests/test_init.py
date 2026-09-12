@@ -62,3 +62,26 @@ async def test_setup_auth_failure_triggers_reauth(
     assert mock_config_entry.state is ConfigEntryState.SETUP_ERROR
     flows = hass.config_entries.flow.async_progress()
     assert any(flow["context"]["source"] == SOURCE_REAUTH for flow in flows)
+
+
+async def test_legacy_entry_without_cookie_triggers_reauth(
+    hass: HomeAssistant,
+    mock_legacy_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """An entry predating the removal of login/password asks for a cookie.
+
+    Such an entry cannot authenticate at all any more, so it must fail loudly
+    into a reauth flow rather than hitting the site with credentials the
+    reCAPTCHA will reject.
+    """
+    mock_legacy_config_entry.add_to_hass(hass)
+
+    assert not await hass.config_entries.async_setup(mock_legacy_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert mock_legacy_config_entry.state is ConfigEntryState.SETUP_ERROR
+    # The site is never contacted: there is no usable credential to try.
+    assert mock_get_data.call_count == 0
+    flows = hass.config_entries.flow.async_progress()
+    assert any(flow["context"]["source"] == SOURCE_REAUTH for flow in flows)

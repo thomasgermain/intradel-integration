@@ -8,7 +8,7 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.intradel.const import DOMAIN
 
-from .const import SAMPLE_DATA, USER_INPUT
+from .const import COOKIE_INPUT, SAMPLE_DATA, USER_INPUT
 
 
 @pytest.fixture(autouse=True)
@@ -37,6 +37,21 @@ def bypass_clientsession() -> Generator[None]:
 @pytest.fixture
 def mock_config_entry() -> MockConfigEntry:
     """Return a mock config entry for the integration."""
+    return MockConfigEntry(
+        domain=DOMAIN,
+        title="Intradel",
+        data=COOKIE_INPUT,
+        options={},
+    )
+
+
+@pytest.fixture
+def mock_legacy_config_entry() -> MockConfigEntry:
+    """Return an entry created before the login/password method was removed.
+
+    Such entries carry a username, password and town but no cookie, and can no
+    longer authenticate: the site verifies an invisible reCAPTCHA server-side.
+    """
     return MockConfigEntry(
         domain=DOMAIN,
         title="Intradel",

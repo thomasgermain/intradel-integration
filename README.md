@@ -10,10 +10,14 @@
   your `custom_components` folder.
 
 You can configure it through the UI using integration.
-You have to provide your username and password and the town (same as intradel website), or,
-if the intradel login form rejects a plain username/password request (it is protected by a
-reCAPTCHA), you can instead log in once in a regular browser and paste the resulting session
-cookie.
+
+Authentication is done with a **session cookie** only. The Intradel login form is protected
+by an invisible reCAPTCHA that the site verifies server-side, so a plain username/password
+request is always rejected (`La vérification anti-spam a échoué`) — that method is therefore
+not offered. Log in once in a regular browser and paste the resulting session cookie.
+
+Capturing the cookie by hand should rarely be needed again afterwards: the integration pings
+the site regularly so the session never goes stale.
 
 ### How to get the session cookie
 
@@ -32,6 +36,13 @@ cookie.
 
 The cookie is a session token: if it expires, the integration will ask you to repeat these
 steps to provide a fresh one.
+
+## Options
+
+| Option | Default | Meaning |
+| --- | --- | --- |
+| Minutes between scans | 720 | How often the data is fetched. |
+| Minutes between keep-alive pings | 15 | Keeps the session cookie alive; 0 disables it. |
 
 ## Provided entities
 
