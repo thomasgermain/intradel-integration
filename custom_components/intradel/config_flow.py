@@ -6,6 +6,7 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -23,6 +24,7 @@ from pyintradel.api import get_data
 from .const import (
     CONF_COOKIE,
     CONF_KEEPALIVE_INTERVAL,
+    COOKIE_DOMAIN,
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -39,12 +41,22 @@ async def validate_authentication(hass: HomeAssistant, cookie: str) -> None:
     """Ensure the provided session cookie is working."""
     # One-shot validation: the shared HA session is the documented tool here; the
     # actual polling uses the coordinator's own isolated session.
+
+    session = async_get_clientsession(hass)
+    clear_cookies(session)
+
     try:
-        if not await get_data(async_get_clientsession(hass), cookie=cookie):
+        if not await get_data(session, cookie=cookie):
             raise InvalidAuth
     except ValueError as err:
         _LOGGER.error("Unable to authenticate: %s", err)
         raise InvalidAuth from err
+
+
+def clear_cookies(session: aiohttp.ClientSession) -> None:
+    """Clear previous cookie."""
+
+    session.cookie_jar.clear_domain(COOKIE_DOMAIN)
 
 
 class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):

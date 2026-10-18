@@ -3,6 +3,7 @@
 from homeassistant.const import Platform
 
 DOMAIN = "intradel"
+COOKIE_DOMAIN = "intradel.be"
 
 PLATFORMS = [Platform.SENSOR]
 

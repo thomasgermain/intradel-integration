@@ -6,16 +6,20 @@ reCAPTCHA the site verifies server-side, so no login/password step exists.
 
 from unittest.mock import AsyncMock, patch
 
+import aiohttp
 import pytest
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
+from yarl import URL
 
+from custom_components.intradel.config_flow import validate_authentication
 from custom_components.intradel.const import (
     CONF_COOKIE,
     CONF_KEEPALIVE_INTERVAL,
+    COOKIE_DOMAIN,
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -50,6 +54,40 @@ async def test_user_flow_success(hass: HomeAssistant) -> None:
     assert result["data"] == COOKIE_INPUT
     # The cookie is passed as a keyword argument, never as login/password.
     assert mock.call_args.kwargs["cookie"] == COOKIE_INPUT[CONF_COOKIE]
+
+
+async def test_validate_authentication_clears_previous_cookie(hass: HomeAssistant) -> None:
+    """The old session cookie must not linger once a new one is submitted."""
+
+    class _FakeSession:
+        """Stand-in for the shared HA session; only its cookie jar matters here."""
+
+        def __init__(self) -> None:
+            self.cookie_jar = aiohttp.CookieJar()
+
+    session = _FakeSession()
+    session.cookie_jar.update_cookies(
+        {"PHPSESSID": "old"}, response_url=URL(f"https://{COOKIE_DOMAIN}")
+    )
+
+    with (
+        patch(
+            "custom_components.intradel.config_flow.async_get_clientsession",
+            return_value=session,
+        ),
+        patch(
+            "custom_components.intradel.config_flow.get_data",
+            new_callable=AsyncMock,
+            return_value=SAMPLE_DATA,
+        ) as mock_get_data,
+    ):
+        await validate_authentication(hass, "PHPSESSID=new")
+
+    # The stale cookie is gone from the jar before the new session is used.
+    assert not session.cookie_jar.filter_cookies(URL(f"https://{COOKIE_DOMAIN}"))
+    # The new cookie is forwarded as the explicit parameter, not via the jar.
+    assert mock_get_data.call_args.args[0] is session
+    assert mock_get_data.call_args.kwargs["cookie"] == "PHPSESSID=new"
 
 
 @pytest.mark.parametrize(
