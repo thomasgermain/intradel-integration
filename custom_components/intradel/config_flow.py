@@ -52,6 +52,7 @@ async def validate_authentication(hass: HomeAssistant, cookie: str) -> None:
         _LOGGER.error("Unable to authenticate: %s", err)
         raise InvalidAuth from err
 
+
 def clear_cookies(session: aiohttp.ClientSession) -> None:
     """Clear previous cookie."""
 
