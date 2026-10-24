@@ -1,0 +1,27 @@
+name: Release
+
+# HACS installs from the release tag; the manifest version must match it.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Check manifest version matches the tag
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          version=$(jq -r .version custom_components/intradel/manifest.json)
+          if [ "$version" != "$TAG" ]; then
+            echo "::error file=custom_components/intradel/manifest.json::manifest version $version does not match release tag $TAG"
+            exit 1
+          fi

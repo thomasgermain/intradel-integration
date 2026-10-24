@@ -58,5 +58,29 @@ The `state` is the number of visit of the **current year**.
 The attribute `details` contains the details of the visits (detail/volume and date) 
 The attribute `start_date` is basically 01-01 of the current year.
 
+## Development
+
+Requires Python 3.13. Tests run against the minimum supported Home Assistant (`hacs.json`),
+pinned through `pytest-homeassistant-custom-component` in `requirements_test.txt`, with that
+Home Assistant release's own dependency constraints:
+
+```bash
+python3.13 -m venv .venv && . .venv/bin/activate
+pip install -r requirements_test.txt \
+  -c "https://raw.githubusercontent.com/home-assistant/core/$(jq -r .homeassistant hacs.json)/homeassistant/package_constraints.txt"
+pytest
+ruff check
+ruff format
+mypy
+```
+
+Install the git pre-commit hook once per clone (`pip install pre-commit && pre-commit install`);
+it runs the checks of `.pre-commit-config.yaml`, with the ruff of the activated virtualenv.
+
+CI also runs these checks against the latest Home Assistant release (Python 3.14).
+
+To release, bump `version` in `custom_components/intradel/manifest.json`, then publish a
+GitHub release whose tag is that same version (e.g. `0.1.2`); CI fails the release otherwise.
+
 ---
 <a href="https://www.buymeacoffee.com/tgermain" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>

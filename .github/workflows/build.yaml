@@ -1,0 +1,90 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only superseded PR pushes: every master commit gets a full build.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    name: checks (HA ${{ matrix.ha }})
+    runs-on: ubuntu-latest
+    # Latest Home Assistant is an early warning: its failures show on the job but do not fail the build.
+    continue-on-error: ${{ matrix.ha == 'latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Minimum supported Home Assistant (hacs.json), pinned in requirements_test.txt.
+          - ha: minimum
+            python-version: "3.13"
+          # Latest Home Assistant release, so deprecations and removals show up before users hit them.
+          - ha: latest
+            python-version: "3.14"
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: |
+            requirements_test.txt
+            hacs.json
+
+      # Home Assistant's own pins for the tested release: the dependency versions real installs
+      # get, and no pip backtracking (about 40s of resolving otherwise).
+      - name: Install dependencies
+        id: install
+        env:
+          HA: ${{ matrix.ha }}
+        run: |
+          requirements=requirements_test.txt
+          if [ "$HA" = minimum ]; then
+            ha_version=$(jq -r .homeassistant hacs.json)
+          else
+            # Swap the pinned test plugin for the latest one, and test the Home Assistant it ships.
+            plugin=$(curl -sSf https://pypi.org/pypi/pytest-homeassistant-custom-component/json)
+            ha_version=$(jq -r '.info.requires_dist[] | select(startswith("homeassistant==")) | ltrimstr("homeassistant==")' <<<"$plugin")
+            requirements="$RUNNER_TEMP/requirements_test.txt"
+            sed "s/^pytest-homeassistant-custom-component==.*/pytest-homeassistant-custom-component==$(jq -r .info.version <<<"$plugin")/" requirements_test.txt > "$requirements"
+          fi
+          python -m pip install -r "$requirements" \
+            -c "https://raw.githubusercontent.com/home-assistant/core/$ha_version/homeassistant/package_constraints.txt"
+
+      - name: Check the tested Home Assistant is the hacs.json minimum
+        if: ${{ matrix.ha == 'minimum' }}
+        run: |
+          tested=$(python -c 'from homeassistant.const import __version__; print(__version__)')
+          if [ "$tested" != "$(jq -r .homeassistant hacs.json)" ]; then
+            echo "::error file=requirements_test.txt::tests run Home Assistant $tested, hacs.json declares $(jq -r .homeassistant hacs.json)"
+            exit 1
+          fi
+
+      # Each check runs even if a previous one failed, but not when the install itself failed.
+      - name: Lint with ruff
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff check
+
+      - name: Check formatting with ruff
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff format --check
+
+      - name: Type check with mypy
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: mypy
+
+      - name: Run tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pytest

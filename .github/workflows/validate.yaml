@@ -2,23 +2,42 @@ name: Validate
 
 on:
   push:
+    branches: [master]
   pull_request:
+  # Daily: HACS and hassfest rules change independently of this repository.
   schedule:
     - cron: "0 0 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  # Only superseded PR pushes: master pushes and the daily run share this group and must not cancel
+  # each other.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   hacs:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     steps:
-      - uses: "actions/checkout@v5"
-      - name: HACS validation
-        uses: "hacs/action@main"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          category: "integration"
+          persist-credentials: false
+
+      - name: HACS validation
+        uses: hacs/action@d556e736723344f83838d08488c983a15381059a # 22.5.0
+        with:
+          category: integration
 
   hassfest:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     steps:
-      - uses: "actions/checkout@v5"
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Hassfest validation
-        uses: "home-assistant/actions/hassfest@master"
+        # Its only release (1.0.0, 2020) is far behind master: pinned to a commit of master instead.
+        uses: home-assistant/actions/hassfest@cd6f3635a740c84d8a14f6121a90068b8ece6bf6 # master
