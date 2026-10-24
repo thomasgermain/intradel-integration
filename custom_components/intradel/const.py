@@ -14,9 +14,7 @@ DEFAULT_SCAN_INTERVAL = 720
 CONF_TOWN = "town"
 CONF_COOKIE = "cookie"
 
-# Minutes between session keep-alive pings; 0 disables. The default is comfortably below
-# PHP's 24-minute default session.gc_maxlifetime: the site does not advertise its own
-# value, so this errs on the safe side, and a ping costs no payload at all.
+# Minutes between keep-alive pings, 0 disables; below PHP's 24 min default session lifetime.
 CONF_KEEPALIVE_INTERVAL = "keepalive_interval"
 DEFAULT_KEEPALIVE_INTERVAL = 15
 
