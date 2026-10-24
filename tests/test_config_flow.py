@@ -249,3 +249,11 @@ async def test_options_flow_defaults(
 
     assert schema[CONF_SCAN_INTERVAL] == DEFAULT_SCAN_INTERVAL
     assert schema[CONF_KEEPALIVE_INTERVAL] == DEFAULT_KEEPALIVE_INTERVAL
+
+
+async def test_cookie_field_is_masked(hass: HomeAssistant) -> None:
+    """The session cookie is a live token: it is not displayed in clear."""
+    result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
+
+    selector = result["data_schema"].schema[CONF_COOKIE]
+    assert selector.config["type"] == "password"
