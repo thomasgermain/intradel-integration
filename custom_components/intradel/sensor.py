@@ -27,9 +27,6 @@ _LOGGER = logging.getLogger(__name__)
 # Entities are read-only and fed by the coordinator: no per-entity polling.
 PARALLEL_UPDATES = 0
 
-# Both are yearly cumulative values that reset at the start of each year. The
-# name is None on purpose: the entity takes the name of its device (the label
-# scraped from the site), which is also what these entities were named before.
 BIN_DESCRIPTION = SensorEntityDescription(
     key="bin",
     name=None,
