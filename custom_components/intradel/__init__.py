@@ -50,10 +50,11 @@ def _async_setup_keepalive(
         return
 
     async def _async_ping(_now: object) -> None:
-        if not await ping_session(coordinator.session, cookie):
-            # The next poll turns this into a re-authentication flow; logging it
-            # here explains why the entry is about to ask for a fresh cookie.
-            _LOGGER.info("Intradel session expired despite keep-alive")
+        if await ping_session(coordinator.session, cookie):
+            return
+        # Start the reauth now rather than at the next poll; a no-op if one is open.
+        _LOGGER.debug("Intradel session expired despite keep-alive; starting reauthentication")
+        entry.async_start_reauth(hass)
 
     entry.async_on_unload(async_track_time_interval(hass, _async_ping, timedelta(minutes=minutes)))
 

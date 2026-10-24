@@ -1,13 +1,16 @@
 """Test the Intradel integration setup and unload."""
 
 import asyncio
+from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 from pyintradel.api import ApiError, AuthenticationError
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant_custom_component.common import MockConfigEntry, async_fire_time_changed
 
+from custom_components.intradel.const import DEFAULT_KEEPALIVE_INTERVAL
 from custom_components.intradel.coordinator import IntradelCoordinator
 
 
@@ -106,3 +109,55 @@ async def test_legacy_entry_without_cookie_triggers_reauth(
     assert mock_get_data.call_count == 0
     flows = hass.config_entries.flow.async_progress()
     assert any(flow["context"]["source"] == SOURCE_REAUTH for flow in flows)
+
+
+async def _fire_keepalive(hass: HomeAssistant) -> None:
+    """Advance time past one keep-alive interval and let the ping run."""
+    async_fire_time_changed(
+        hass, dt_util.utcnow() + timedelta(minutes=DEFAULT_KEEPALIVE_INTERVAL, seconds=1)
+    )
+    await hass.async_block_till_done()
+
+
+async def test_keepalive_expiry_starts_reauth_without_waiting_for_a_poll(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A dead session found by the ping asks for a fresh cookie right away."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert not hass.config_entries.flow.async_progress()
+
+    with patch(
+        "custom_components.intradel.ping_session", new_callable=AsyncMock, return_value=False
+    ) as ping:
+        await _fire_keepalive(hass)
+        await _fire_keepalive(hass)
+
+    assert ping.call_count == 2
+    # The poll interval (12 h) has not elapsed: only the ping can have started this.
+    assert mock_get_data.call_count == 1
+    flows = hass.config_entries.flow.async_progress()
+    # The second failed ping must not open a second flow.
+    assert [flow["context"]["source"] for flow in flows] == [SOURCE_REAUTH]
+
+
+async def test_keepalive_live_session_does_not_start_reauth(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A valid session is left alone."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    with patch(
+        "custom_components.intradel.ping_session", new_callable=AsyncMock, return_value=True
+    ) as ping:
+        await _fire_keepalive(hass)
+
+    assert ping.call_count == 1
+    assert not hass.config_entries.flow.async_progress()
