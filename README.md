@@ -58,5 +58,31 @@ The `state` is the number of visit of the **current year**.
 The attribute `details` contains the details of the visits (detail/volume and date) 
 The attribute `start_date` is basically 01-01 of the current year.
 
+## Development
+
+Requires Python 3.13. Tests run against the minimum supported Home Assistant (`hacs.json`),
+pinned through `pytest-homeassistant-custom-component` in `requirements_test.txt`:
+
+```bash
+python3.13 -m venv .venv && . .venv/bin/activate
+pip install -r requirements_test.txt
+pytest
+ruff check custom_components tests
+ruff format custom_components tests
+mypy custom_components/intradel
+```
+
+Install the git pre-commit hook once per clone; it runs ruff (lint with autofix, format) and
+checks the YAML, JSON and TOML files before each commit:
+
+```bash
+pip install pre-commit
+pre-commit install
+pre-commit run --all-files   # optional: run the hooks on the whole repository
+```
+
+To release, bump `version` in `custom_components/intradel/manifest.json`, then publish a
+GitHub release whose tag is that same version (e.g. `0.1.2`); CI fails the release otherwise.
+
 ---
 <a href="https://www.buymeacoffee.com/tgermain" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>

@@ -1,0 +1,49 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Python of the minimum supported Home Assistant, pinned in requirements_test.txt.
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements_test.txt
+
+      - name: Install dependencies
+        id: install
+        run: python -m pip install -r requirements_test.txt
+
+      # Each check runs even if a previous one failed, but not when the install itself failed.
+      - name: Lint with ruff
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff check custom_components tests
+
+      - name: Check formatting with ruff
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: ruff format --check custom_components tests
+
+      - name: Type check with mypy
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: mypy custom_components/intradel
+
+      - name: Run tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: pytest

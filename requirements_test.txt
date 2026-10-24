@@ -1,7 +1,8 @@
-# Pulls in a matching Home Assistant + pytest plugins for testing custom components.
-pytest-homeassistant-custom-component==0.13.205
+# Pulls in Home Assistant and its pytest plugins for testing custom components.
+# Pinned to the minimum supported Home Assistant (hacs.json): 0.13.305 ships homeassistant==2026.1.0.
+pytest-homeassistant-custom-component==0.13.305
 # Runtime dependency of the integration (declared in manifest.json).
 pyintradel==0.0.7
 # Lint and type checking.
-ruff>=0.15
-mypy>=2.1
+ruff==0.17.2
+mypy==2.4.0
