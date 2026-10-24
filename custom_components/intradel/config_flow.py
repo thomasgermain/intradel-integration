@@ -24,6 +24,9 @@ from homeassistant.helpers.selector import (
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 from pyintradel.api import AuthenticationError, IntradelError, get_data
 
@@ -41,7 +44,10 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-DATA_SCHEMA_COOKIE = vol.Schema({vol.Required(CONF_COOKIE): str})
+# A live session token: masked like a password.
+DATA_SCHEMA_COOKIE = vol.Schema(
+    {vol.Required(CONF_COOKIE): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))}
+)
 
 INTRADEL_URL = "https://www.intradel.be/particulier/"
 
