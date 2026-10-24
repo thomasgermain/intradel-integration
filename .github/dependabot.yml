@@ -4,11 +4,18 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # One PR per ecosystem and week rather than one per package.
+    groups:
+      github-actions:
+        patterns: ["*"]
 
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
+    groups:
+      pip:
+        patterns: ["*"]
     ignore:
       # Pinned to the minimum supported Home Assistant (hacs.json): raise it deliberately.
       - dependency-name: pytest-homeassistant-custom-component

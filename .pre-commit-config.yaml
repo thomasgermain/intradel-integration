@@ -8,10 +8,16 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
 
-  # Keep rev in sync with the ruff pin in requirements_test.txt.
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.17.2
+  # The ruff pinned in requirements_test.txt, so the hook and CI always run the same version.
+  - repo: local
     hooks:
       - id: ruff-check
-        args: [--fix]
+        name: ruff check
+        entry: ruff check --fix
+        language: system
+        types_or: [python, pyi]
       - id: ruff-format
+        name: ruff format
+        entry: ruff format
+        language: system
+        types_or: [python, pyi]

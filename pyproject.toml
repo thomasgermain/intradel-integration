@@ -6,7 +6,7 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = [
@@ -21,6 +21,7 @@ select = [
 ]
 
 [tool.mypy]
+files = ["custom_components/intradel"]
 strict = true
 ignore_missing_imports = true
 show_error_context = true

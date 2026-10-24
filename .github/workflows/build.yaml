@@ -4,7 +4,7 @@ on:
   push:
     branches: [master]
   pull_request:
-  # Called by the release workflow, so a release is only published after these checks pass.
+  # Called by the release workflow, so the release zip is only uploaded after these checks pass.
   workflow_call:
 
 permissions:
@@ -36,15 +36,15 @@ jobs:
       # Each check runs even if a previous one failed, but not when the install itself failed.
       - name: Lint with ruff
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: ruff check custom_components tests
+        run: ruff check
 
       - name: Check formatting with ruff
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: ruff format --check custom_components tests
+        run: ruff format --check
 
       - name: Type check with mypy
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: mypy custom_components/intradel
+        run: mypy
 
       - name: Run tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

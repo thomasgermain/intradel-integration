@@ -67,19 +67,13 @@ pinned through `pytest-homeassistant-custom-component` in `requirements_test.txt
 python3.13 -m venv .venv && . .venv/bin/activate
 pip install -r requirements_test.txt
 pytest
-ruff check custom_components tests
-ruff format custom_components tests
-mypy custom_components/intradel
+ruff check
+ruff format
+mypy
 ```
 
-Install the git pre-commit hook once per clone; it runs ruff (lint with autofix, format) and
-checks the YAML, JSON and TOML files before each commit:
-
-```bash
-pip install pre-commit
-pre-commit install
-pre-commit run --all-files   # optional: run the hooks on the whole repository
-```
+Install the git pre-commit hook once per clone (`pip install pre-commit && pre-commit install`);
+it runs the checks of `.pre-commit-config.yaml`, with the ruff of the activated virtualenv.
 
 To release, publish a GitHub release whose tag is the new version (e.g. `0.1.2` or `0.2.0b1`).
 Once the checks pass, CI builds `intradel.zip` with that version in its manifest and attaches it
