@@ -4,6 +4,7 @@ from unittest.mock import AsyncMock
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
+from pyintradel.api import ApiError, AuthenticationError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.intradel.coordinator import IntradelCoordinator
@@ -36,7 +37,7 @@ async def test_setup_retry_on_fetch_error(
     mock_get_data: AsyncMock,
 ) -> None:
     """A failure during the first refresh puts the entry in retry state."""
-    mock_get_data.side_effect = ValueError("Wrong response received")
+    mock_get_data.side_effect = ApiError(503)
     mock_config_entry.add_to_hass(hass)
 
     assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
@@ -51,9 +52,7 @@ async def test_setup_auth_failure_triggers_reauth(
     mock_get_data: AsyncMock,
 ) -> None:
     """A credentials error starts a reauth flow instead of an endless retry."""
-    mock_get_data.side_effect = ValueError(
-        "Wrong response received, login/password seems incorrect"
-    )
+    mock_get_data.side_effect = AuthenticationError()
     mock_config_entry.add_to_hass(hass)
 
     assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)

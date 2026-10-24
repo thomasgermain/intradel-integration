@@ -2,7 +2,7 @@
 # Pinned to the minimum supported Home Assistant (hacs.json): 0.13.305 ships homeassistant==2026.1.0.
 pytest-homeassistant-custom-component==0.13.305
 # Runtime dependency of the integration (declared in manifest.json).
-pyintradel==0.0.7
+pyintradel==0.1.0b2
 # Lint and type checking.
 ruff==0.17.2
 mypy==2.4.0

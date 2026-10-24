@@ -12,6 +12,7 @@ from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
+from pyintradel.api import ApiError, AuthenticationError, ParseError
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 from yarl import URL
 
@@ -57,13 +58,32 @@ async def test_user_flow_success(hass: HomeAssistant) -> None:
 
 
 async def test_validate_authentication_clears_previous_cookie(hass: HomeAssistant) -> None:
-    """The old session cookie must not linger once a new one is submitted."""
+    """The old session cookie must not linger once a new one is submitted (done by pyintradel)."""
+
+    class _FakeResponse:
+        status = 200
+
+        async def __aenter__(self) -> "_FakeResponse":
+            return self
+
+        async def __aexit__(self, *exc_info: object) -> None:
+            return None
+
+        async def text(self) -> str:
+            return ""
 
     class _FakeSession:
-        """Stand-in for the shared HA session; only its cookie jar matters here."""
+        """Stand-in for the shared HA session."""
 
         def __init__(self) -> None:
             self.cookie_jar = aiohttp.CookieJar()
+            self.jar_at_request: object = None
+            self.headers: dict[str, str] = {}
+
+        def get(self, url: str, *, headers: dict[str, str], **kwargs: object) -> _FakeResponse:
+            self.jar_at_request = self.cookie_jar.filter_cookies(URL(url))
+            self.headers = headers
+            return _FakeResponse()
 
     session = _FakeSession()
     session.cookie_jar.update_cookies(
@@ -75,26 +95,21 @@ async def test_validate_authentication_clears_previous_cookie(hass: HomeAssistan
             "custom_components.intradel.config_flow.async_get_clientsession",
             return_value=session,
         ),
-        patch(
-            "custom_components.intradel.config_flow.get_data",
-            new_callable=AsyncMock,
-            return_value=SAMPLE_DATA,
-        ) as mock_get_data,
+        patch("pyintradel.api.parser.parse", return_value=SAMPLE_DATA),
     ):
         await validate_authentication(hass, "PHPSESSID=new")
 
-    # The stale cookie is gone from the jar before the new session is used.
-    assert not session.cookie_jar.filter_cookies(URL(f"https://{COOKIE_DOMAIN}"))
-    # The new cookie is forwarded as the explicit parameter, not via the jar.
-    assert mock_get_data.call_args.args[0] is session
-    assert mock_get_data.call_args.kwargs["cookie"] == "PHPSESSID=new"
+    assert not session.jar_at_request
+    assert session.headers["Cookie"] == "PHPSESSID=new"
 
 
 @pytest.mark.parametrize(
     ("side_effect", "return_value", "expected"),
     [
-        (ValueError("login/password seems incorrect"), None, "invalid_auth"),
+        (AuthenticationError(), None, "invalid_auth"),
         (None, [], "invalid_auth"),
+        (ApiError(500), None, "cannot_connect"),
+        (ParseError("Unexpected response structure from intradel"), None, "cannot_connect"),
         (RuntimeError("boom"), None, "unknown"),
     ],
 )
@@ -167,7 +182,7 @@ async def test_reauth_flow_invalid_auth(
     with patch(
         "custom_components.intradel.config_flow.get_data",
         new_callable=AsyncMock,
-        side_effect=ValueError("login/password seems incorrect"),
+        side_effect=AuthenticationError(),
     ):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_COOKIE: "PHPSESSID=stale"}
