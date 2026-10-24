@@ -259,17 +259,17 @@ async def test_options_flow_reloads_the_entry(
 
     result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
     await hass.config_entries.options.async_configure(
-        result["flow_id"], {CONF_SCAN_INTERVAL: 60, CONF_KEEPALIVE_INTERVAL: 0}
+        result["flow_id"], {CONF_SCAN_INTERVAL: 120, CONF_KEEPALIVE_INTERVAL: 0}
     )
     await hass.async_block_till_done()
 
-    assert mock_config_entry.runtime_data.update_interval == timedelta(minutes=60)
+    assert mock_config_entry.runtime_data.update_interval == timedelta(minutes=120)
 
 
 @pytest.mark.parametrize(
     "user_input",
     [
-        # 0 would silently stop the polling.
+        # below the one-hour minimum (0 would silently stop the polling)
         {CONF_SCAN_INTERVAL: MIN_SCAN_INTERVAL - 1, CONF_KEEPALIVE_INTERVAL: 15},
         {CONF_SCAN_INTERVAL: MAX_SCAN_INTERVAL + 1, CONF_KEEPALIVE_INTERVAL: 15},
         {CONF_SCAN_INTERVAL: 720, CONF_KEEPALIVE_INTERVAL: -1},
