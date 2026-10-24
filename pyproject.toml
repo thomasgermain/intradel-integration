@@ -18,6 +18,9 @@ select = [
     "C4",  # flake8-comprehensions
     "ERA", # eradicate (commented-out code)
     "UP",  # pyupgrade
+    "RUF", # ruff-specific rules
+    "SIM", # flake8-simplify
+    "PT",  # flake8-pytest-style
 ]
 
 [tool.mypy]

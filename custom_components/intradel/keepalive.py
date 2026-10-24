@@ -18,18 +18,12 @@ check (200 when the session is valid, a 302 to the login page when it is not).
 from __future__ import annotations
 
 import logging
-from datetime import timedelta
 
 import aiohttp
 
 _LOGGER = logging.getLogger(__name__)
 
 DATA_URL = "https://www.intradel.be/particulier/data.php"
-
-# Comfortably below PHP's 24-minute default session.gc_maxlifetime. The site
-# does not advertise its own value, so this errs on the safe side; a ping costs
-# no payload at all.
-DEFAULT_KEEPALIVE_INTERVAL = timedelta(minutes=15)
 
 
 async def ping_session(session: aiohttp.ClientSession, cookie: str) -> bool:

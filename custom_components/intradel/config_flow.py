@@ -81,7 +81,7 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "invalid_auth"
             except CannotConnect:
                 errors["base"] = "cannot_connect"
-            except Exception:  # noqa: BLE001
+            except Exception:
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
