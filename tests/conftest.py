@@ -12,11 +12,8 @@ from .const import COOKIE_INPUT, SAMPLE_DATA, USER_INPUT
 
 
 @pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(
-    enable_custom_integrations: None,
-) -> Generator[None]:
+def auto_enable_custom_integrations(enable_custom_integrations: None) -> None:
     """Enable loading of the custom integration in every test."""
-    yield
 
 
 @pytest.fixture(autouse=True)

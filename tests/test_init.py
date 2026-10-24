@@ -1,8 +1,9 @@
 """Test the Intradel integration setup and unload."""
 
 import asyncio
+import copy
 from datetime import timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -12,6 +13,8 @@ from pytest_homeassistant_custom_component.common import MockConfigEntry, async_
 
 from custom_components.intradel.const import DEFAULT_KEEPALIVE_INTERVAL
 from custom_components.intradel.coordinator import IntradelCoordinator
+
+from .const import SAMPLE_DATA
 
 
 async def test_setup_and_unload_entry(
@@ -161,3 +164,27 @@ async def test_keepalive_live_session_does_not_start_reauth(
 
     assert ping.call_count == 1
     assert not hass.config_entries.flow.async_progress()
+
+
+async def test_listeners_are_notified_only_when_the_data_changes(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """An identical payload must not rewrite every sensor state."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    coordinator = mock_config_entry.runtime_data
+    notified = MagicMock()
+    coordinator.async_add_listener(notified)
+
+    mock_get_data.return_value = copy.deepcopy(SAMPLE_DATA)
+    await coordinator.async_refresh()
+    notified.assert_not_called()
+
+    changed = copy.deepcopy(SAMPLE_DATA)
+    changed[0]["total"] = "99"
+    mock_get_data.return_value = changed
+    await coordinator.async_refresh()
+    notified.assert_called_once()
