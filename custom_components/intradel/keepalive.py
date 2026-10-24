@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from datetime import timedelta
 
 import aiohttp
 
@@ -28,11 +27,6 @@ from .const import REQUEST_TIMEOUT
 _LOGGER = logging.getLogger(__name__)
 
 DATA_URL = "https://www.intradel.be/particulier/data.php"
-
-# Comfortably below PHP's 24-minute default session.gc_maxlifetime. The site
-# does not advertise its own value, so this errs on the safe side; a ping costs
-# no payload at all.
-DEFAULT_KEEPALIVE_INTERVAL = timedelta(minutes=15)
 
 
 async def ping_session(session: aiohttp.ClientSession, cookie: str) -> bool:
