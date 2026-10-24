@@ -88,6 +88,18 @@ async def test_sensor_value_updates_on_refresh(
     assert hass.states.get(bin_entity).state == "99.0"
 
 
+def _device(hass: HomeAssistant, entry: MockConfigEntry, data_id: str) -> dr.DeviceEntry | None:
+    """The entry's device for a bin, whatever the Home Assistant version.
+
+    async_get_device is deprecated in recent Home Assistant releases and its
+    replacement does not exist in the minimum supported one.
+    """
+    for device in dr.async_entries_for_config_entry(dr.async_get(hass), entry.entry_id):
+        if (DOMAIN, data_id) in device.identifiers:
+            return device
+    return None
+
+
 async def _refresh(hass: HomeAssistant, entry: MockConfigEntry, data: list) -> None:
     entry.runtime_data.async_set_updated_data(data)
     await hass.async_block_till_done()
@@ -104,7 +116,7 @@ async def test_entities_are_named_after_their_device(
     assert entity_id == "sensor.organique"
 
     assert hass.states.get(entity_id).attributes[ATTR_FRIENDLY_NAME] == "ORGANIQUE"
-    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "123456")})
+    device = _device(hass, mock_config_entry, "123456")
     assert device is not None
     assert device.name == "ORGANIQUE"
     assert device.manufacturer == MANUFACTURER
@@ -195,8 +207,7 @@ async def test_only_stale_devices_can_be_removed(
 ) -> None:
     """A device still reported by the site is kept; a vanished one may be deleted."""
     await _setup(hass, mock_config_entry)
-    dev_reg = dr.async_get(hass)
-    bin_device = dev_reg.async_get_device(identifiers={(DOMAIN, "123456")})
+    bin_device = _device(hass, mock_config_entry, "123456")
     assert bin_device is not None
 
     assert not await async_remove_config_entry_device(hass, mock_config_entry, bin_device)
