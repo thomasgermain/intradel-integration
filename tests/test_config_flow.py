@@ -43,14 +43,16 @@ async def test_user_flow_asks_for_a_cookie(hass: HomeAssistant) -> None:
     assert result["errors"] == {}
 
 
-async def test_user_flow_success(hass: HomeAssistant) -> None:
+# An account with no bin and no recypark yet still has a valid cookie.
+@pytest.mark.parametrize("payload", [SAMPLE_DATA, []], ids=["data", "empty"])
+async def test_user_flow_success(hass: HomeAssistant, payload: list[dict[str, str]]) -> None:
     """A valid cookie creates the entry."""
     result = await hass.config_entries.flow.async_init(DOMAIN, context={"source": SOURCE_USER})
 
     with patch(
         "custom_components.intradel.config_flow.get_data",
         new_callable=AsyncMock,
-        return_value=SAMPLE_DATA,
+        return_value=payload,
     ) as mock:
         result = await hass.config_entries.flow.async_configure(result["flow_id"], COOKIE_INPUT)
         await hass.async_block_till_done()
@@ -112,7 +114,6 @@ async def test_validate_authentication_clears_previous_cookie(hass: HomeAssistan
     ("side_effect", "return_value", "expected"),
     [
         (AuthenticationError(), None, "invalid_auth"),
-        (None, [], "invalid_auth"),
         (ApiError(500), None, "cannot_connect"),
         (ParseError("Unexpected response structure from intradel"), None, "cannot_connect"),
         # Transport errors are not wrapped by pyintradel.

@@ -61,8 +61,8 @@ async def validate_authentication(hass: HomeAssistant, cookie: str) -> None:
 
     try:
         async with asyncio.timeout(REQUEST_TIMEOUT):
-            if not await get_data(session, cookie=cookie):
-                raise InvalidAuth
+            # Any payload, even an empty one, means the cookie was accepted.
+            await get_data(session, cookie=cookie)
     except AuthenticationError as err:
         _LOGGER.debug("Unable to authenticate: %s", err)
         raise InvalidAuth from err
