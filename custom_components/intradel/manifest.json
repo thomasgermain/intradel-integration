@@ -1,7 +1,6 @@
 {
   "domain": "intradel",
   "name": "Intradel",
-  "categories": ["local_services"],
   "codeowners": ["@thomasgermain"],
   "config_flow": true,
   "documentation": "https://github.com/thomasgermain/intradel-integration",
