@@ -6,6 +6,9 @@
         "description": "Le formulaire de connexion Intradel est protégé par un reCAPTCHA vérifié côté serveur : un identifiant et un mot de passe ne peuvent donc pas être utilisés ici. Connectez-vous sur {intradel_url} dans un navigateur classique, puis copiez la valeur de l'en-tête de requête « Cookie » et collez-la ci-dessous.",
         "data": {
           "cookie": "Cookie de session"
+        },
+        "data_description": {
+          "cookie": "La valeur complète de l'en-tête de requête « Cookie » d'une requête authentifiée vers le site Intradel. Elle est conservée telle quelle et n'est renvoyée qu'à Intradel."
         }
       },
       "reauth_confirm": {
@@ -13,16 +16,19 @@
         "description": "Le cookie de session enregistré n'est plus valide. Reconnectez-vous sur {intradel_url} dans un navigateur classique et collez un nouveau cookie.",
         "data": {
           "cookie": "Cookie de session"
+        },
+        "data_description": {
+          "cookie": "La valeur complète de l'en-tête de requête « Cookie » d'une requête authentifiée vers le site Intradel."
         }
       }
     },
     "error": {
       "cannot_connect": "Impossible de se connecter",
-      "invalid_auth": "Identifiants incorrects",
+      "invalid_auth": "Cookie de session invalide ou expiré",
       "unknown": "Erreur inattendue"
     },
     "abort": {
-      "single_instance_allowed": "Une seule instance de l'intégration authorisée",
+      "single_instance_allowed": "Une seule instance de l'intégration est autorisée",
       "reauth_successful": "La ré-authentification a réussi"
     }
   },
@@ -32,6 +38,10 @@
         "data": {
           "scan_interval": "Minutes entre chaque rafraîchissement",
           "keepalive_interval": "Minutes entre deux pings de maintien de session (0 pour désactiver)"
+        },
+        "data_description": {
+          "scan_interval": "Fréquence de récupération des poids et des visites auprès d'Intradel.",
+          "keepalive_interval": "Fréquence de contact du site pour que le cookie de session n'expire pas. 0 pour désactiver."
         }
       }
     }
