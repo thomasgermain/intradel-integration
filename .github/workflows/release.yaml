@@ -1,6 +1,7 @@
 name: Release
 
-# HACS installs from the release tag; the manifest version must match it.
+# The release tag is the version: the manifest in the repository keeps a 0.0.0 placeholder, and
+# HACS installs the zip built here (hacs.json: zip_release), whose manifest carries the tag.
 on:
   release:
     types: [published]
@@ -9,19 +10,42 @@ permissions:
   contents: read
 
 jobs:
-  check-version:
+  build:
+    uses: ./.github/workflows/build.yaml
+
+  publish:
+    needs: build
     runs-on: ubuntu-latest
+    permissions:
+      # Upload the zip to the release.
+      contents: write
+    env:
+      TAG: ${{ github.event.release.tag_name }}
+
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
-      - name: Check manifest version matches the tag
-        env:
-          TAG: ${{ github.event.release.tag_name }}
+      - name: Validate the tag
         run: |
-          version=$(jq -r .version custom_components/intradel/manifest.json)
-          if [ "$version" != "$TAG" ]; then
-            echo "::error file=custom_components/intradel/manifest.json::manifest version $version does not match release tag $TAG"
+          if [[ ! "$TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+((a|b|rc)[0-9]+)?$ ]]; then
+            echo "::error::Release tag '$TAG' is not a version such as 0.1.2 or 0.2.0b1"
             exit 1
           fi
+
+      - name: Set the manifest version
+        run: |
+          manifest=custom_components/intradel/manifest.json
+          jq --arg version "$TAG" '.version = $version' "$manifest" > "$RUNNER_TEMP/manifest.json"
+          mv "$RUNNER_TEMP/manifest.json" "$manifest"
+
+      # HACS expects the integration files at the root of the zip.
+      - name: Zip the integration
+        working-directory: custom_components/intradel
+        run: zip -r "$RUNNER_TEMP/intradel.zip" .
+
+      - name: Upload the zip to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release upload "$TAG" "$RUNNER_TEMP/intradel.zip" --repo "$GITHUB_REPOSITORY"

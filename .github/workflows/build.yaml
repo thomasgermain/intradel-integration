@@ -4,6 +4,8 @@ on:
   push:
     branches: [master]
   pull_request:
+  # Called by the release workflow, so a release is only published after these checks pass.
+  workflow_call:
 
 permissions:
   contents: read

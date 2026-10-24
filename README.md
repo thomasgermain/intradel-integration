@@ -6,8 +6,8 @@
 ## Installations
 
 - Through HACS [custom repositories](https://hacs.xyz/docs/faq/custom_repositories/) !
-- Otherwise, download the zip from the latest release and copy `intradel` folder and put it inside
-  your `custom_components` folder.
+- Otherwise, download `intradel.zip` from the latest release and extract it into
+  `custom_components/intradel` in your Home Assistant configuration folder.
 
 You can configure it through the UI using integration.
 
@@ -81,8 +81,9 @@ pre-commit install
 pre-commit run --all-files   # optional: run the hooks on the whole repository
 ```
 
-To release, bump `version` in `custom_components/intradel/manifest.json`, then publish a
-GitHub release whose tag is that same version (e.g. `0.1.2`); CI fails the release otherwise.
+To release, publish a GitHub release whose tag is the new version (e.g. `0.1.2` or `0.2.0b1`).
+Once the checks pass, CI builds `intradel.zip` with that version in its manifest and attaches it
+to the release; the `version` committed in `manifest.json` is a `0.0.0` placeholder.
 
 ---
 <a href="https://www.buymeacoffee.com/tgermain" target="_blank"><img src="https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png" alt="Buy Me A Coffee" style="height: auto !important;width: auto !important;" ></a>
