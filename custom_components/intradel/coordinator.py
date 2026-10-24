@@ -12,7 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pyintradel.api import get_data
+from pyintradel.api import AuthenticationError, IntradelError, get_data
 
 from .const import CONF_COOKIE, DOMAIN
 
@@ -53,9 +53,6 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
 
     async def _async_update_data(self) -> list[dict[str, Any]]:
         """Fetch data from intradel."""
-        # Intradel re-authenticates on every request, so no cookie should survive
-        # from one poll to the next: start each poll from a clean jar.
-        self._session.cookie_jar.clear()
         cookie = self.config_entry.data.get(CONF_COOKIE)
         if not cookie:
             # An entry created before the login/password method was removed. That
@@ -67,12 +64,8 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
         try:
             # pyintradel types its return as list[Any]; narrow it for consumers.
             data: list[dict[str, Any]] = await get_data(self._session, cookie=cookie)
-        except ValueError as err:
-            message = str(err.args[0]) if err.args else str(err)
-            # pyintradel signals bad credentials (or a rejected/expired cookie)
-            # with this specific message; anything else is an unexpected-markup
-            # / transient scraping error.
-            if "login/password" in message:
-                raise ConfigEntryAuthFailed(message) from err
-            raise UpdateFailed(message) from err
+        except AuthenticationError as err:
+            raise ConfigEntryAuthFailed(str(err)) from err
+        except IntradelError as err:
+            raise UpdateFailed(str(err)) from err
         return data

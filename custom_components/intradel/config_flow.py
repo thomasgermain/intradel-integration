@@ -6,7 +6,6 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
-import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import (
     ConfigEntry,
@@ -19,12 +18,11 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from pyintradel.api import get_data
+from pyintradel.api import AuthenticationError, IntradelError, get_data
 
 from .const import (
     CONF_COOKIE,
     CONF_KEEPALIVE_INTERVAL,
-    COOKIE_DOMAIN,
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -43,20 +41,16 @@ async def validate_authentication(hass: HomeAssistant, cookie: str) -> None:
     # actual polling uses the coordinator's own isolated session.
 
     session = async_get_clientsession(hass)
-    clear_cookies(session)
 
     try:
         if not await get_data(session, cookie=cookie):
             raise InvalidAuth
-    except ValueError as err:
+    except AuthenticationError as err:
         _LOGGER.error("Unable to authenticate: %s", err)
         raise InvalidAuth from err
-
-
-def clear_cookies(session: aiohttp.ClientSession) -> None:
-    """Clear previous cookie."""
-
-    session.cookie_jar.clear_domain(COOKIE_DOMAIN)
+    except IntradelError as err:
+        _LOGGER.error("Unable to fetch intradel data: %s", err)
+        raise CannotConnect from err
 
 
 class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -85,6 +79,8 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
                 await validate_authentication(self.hass, user_input[CONF_COOKIE])
             except InvalidAuth:
                 errors["base"] = "invalid_auth"
+            except CannotConnect:
+                errors["base"] = "cannot_connect"
             except Exception:  # noqa: BLE001
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
