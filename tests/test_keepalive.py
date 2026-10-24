@@ -54,6 +54,13 @@ async def test_network_error_does_not_invalidate_the_session() -> None:
     assert await ping_session(session, COOKIE) is True
 
 
+async def test_timeout_does_not_invalidate_the_session() -> None:
+    """A hanging site is a transient outage too, not an expired session."""
+    session = _session(error=TimeoutError())
+
+    assert await ping_session(session, COOKIE) is True
+
+
 async def test_redirects_are_not_followed() -> None:
     """Following the redirect would turn the expiry signal into a 200."""
     session = _session(status=200)

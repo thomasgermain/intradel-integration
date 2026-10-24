@@ -9,6 +9,9 @@ PLATFORMS = [Platform.SENSOR]
 
 DEFAULT_SCAN_INTERVAL = 720
 
+# Seconds before a request to the site is given up on; aiohttp's own default is 5 minutes.
+REQUEST_TIMEOUT = 30
+
 # Only kept to describe entries created before login/password was removed; the
 # integration authenticates with a session cookie exclusively.
 CONF_TOWN = "town"

@@ -1,6 +1,7 @@
 """Test the Intradel integration setup and unload."""
 
-from unittest.mock import AsyncMock
+import asyncio
+from unittest.mock import AsyncMock, patch
 
 from homeassistant.config_entries import SOURCE_REAUTH, ConfigEntryState
 from homeassistant.core import HomeAssistant
@@ -44,6 +45,27 @@ async def test_setup_retry_on_fetch_error(
     await hass.async_block_till_done()
 
     assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+
+
+async def test_setup_retry_on_timeout(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A site that does not answer in time is retried, not treated as a bad cookie."""
+
+    async def _hang(*args: object, **kwargs: object) -> None:
+        await asyncio.sleep(3600)
+
+    mock_get_data.side_effect = _hang
+    mock_config_entry.add_to_hass(hass)
+
+    with patch("custom_components.intradel.coordinator.REQUEST_TIMEOUT", 0.01):
+        assert not await hass.config_entries.async_setup(mock_config_entry.entry_id)
+        await hass.async_block_till_done()
+
+    assert mock_config_entry.state is ConfigEntryState.SETUP_RETRY
+    assert not hass.config_entries.flow.async_progress()
 
 
 async def test_setup_auth_failure_triggers_reauth(

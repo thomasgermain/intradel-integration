@@ -17,10 +17,13 @@ check (200 when the session is valid, a 302 to the login page when it is not).
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import timedelta
 
 import aiohttp
+
+from .const import REQUEST_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,14 +44,15 @@ async def ping_session(session: aiohttp.ClientSession, cookie: str) -> bool:
     the next real poll anyway.
     """
     try:
-        async with session.head(
-            DATA_URL, headers={"Cookie": cookie}, allow_redirects=False
-        ) as resp:
+        async with (
+            asyncio.timeout(REQUEST_TIMEOUT),
+            session.head(DATA_URL, headers={"Cookie": cookie}, allow_redirects=False) as resp,
+        ):
             if resp.status == 200:
                 _LOGGER.debug("Intradel session ping returned %s: session still valid", resp.status)
                 return True
             _LOGGER.debug("Intradel session ping returned %s: session expired", resp.status)
             return False
-    except aiohttp.ClientError as err:
+    except (aiohttp.ClientError, TimeoutError) as err:
         _LOGGER.debug("Intradel session ping failed (%s); assuming still valid", err)
         return True
