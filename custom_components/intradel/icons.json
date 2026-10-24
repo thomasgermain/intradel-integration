@@ -1,0 +1,12 @@
+{
+  "entity": {
+    "sensor": {
+      "bin": {
+        "default": "mdi:trash-can"
+      },
+      "recyparc": {
+        "default": "mdi:recycle"
+      }
+    }
+  }
+}

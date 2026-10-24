@@ -7,6 +7,7 @@ from datetime import timedelta
 
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.device_registry import DeviceEntry
 from homeassistant.helpers.event import async_track_time_interval
 
 from .const import (
@@ -14,6 +15,7 @@ from .const import (
     CONF_KEEPALIVE_INTERVAL,
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    DOMAIN,
     PLATFORMS,
 )
 from .coordinator import IntradelConfigEntry, IntradelCoordinator
@@ -62,6 +64,19 @@ def _async_setup_keepalive(
 async def _async_update_listener(hass: HomeAssistant, entry: IntradelConfigEntry) -> None:
     """Reload the entry when its options are updated."""
     await hass.config_entries.async_reload(entry.entry_id)
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant, entry: IntradelConfigEntry, device_entry: DeviceEntry
+) -> bool:
+    """Allow deleting a device the site no longer reports (a stale bin)."""
+    # Not set when the entry failed to load: nothing is reported then, so any device may go.
+    coordinator: IntradelCoordinator | None = getattr(entry, "runtime_data", None)
+    reported = {item["id"] for item in (coordinator.data if coordinator else None) or []}
+    return not any(
+        domain == DOMAIN and identifier in reported
+        for domain, identifier in device_entry.identifiers
+    )
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IntradelConfigEntry) -> bool:

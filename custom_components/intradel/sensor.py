@@ -9,16 +9,17 @@ from typing import Any
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
+    SensorEntityDescription,
     SensorStateClass,
 )
 from homeassistant.const import UnitOfMass
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.typing import StateType
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import ATTR_START_DATE, DOMAIN
+from .const import ATTR_DETAILS, ATTR_START_DATE, DOMAIN, MANUFACTURER, RECYPARC_ID
 from .coordinator import IntradelConfigEntry, IntradelCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,7 +27,21 @@ _LOGGER = logging.getLogger(__name__)
 # Entities are read-only and fed by the coordinator: no per-entity polling.
 PARALLEL_UPDATES = 0
 
-_RECYPARC = "RECYPARC"
+BIN_DESCRIPTION = SensorEntityDescription(
+    key="bin",
+    name=None,
+    translation_key="bin",
+    device_class=SensorDeviceClass.WEIGHT,
+    native_unit_of_measurement=UnitOfMass.KILOGRAMS,
+    state_class=SensorStateClass.TOTAL_INCREASING,
+)
+# A visit counter: no unit, no device class.
+RECYPARC_DESCRIPTION = SensorEntityDescription(
+    key="recyparc",
+    name=None,
+    translation_key="recyparc",
+    state_class=SensorStateClass.TOTAL_INCREASING,
+)
 
 
 async def async_setup_entry(
@@ -36,22 +51,48 @@ async def async_setup_entry(
 ) -> None:
     """Set up the intradel sensors."""
     coordinator = entry.runtime_data
-    if coordinator.data:
-        async_add_entities(IntradelSensor(coordinator, data["id"]) for data in coordinator.data)
+    known_ids: set[str] = set()
+
+    @callback
+    def _async_add_new_sensors() -> None:
+        """Create a sensor for every item the site reports that has none yet.
+
+        The first payload may be empty, and a bin (or the recypark) can show up
+        later, so this runs on every coordinator update, not only at setup.
+        """
+        new_items = []
+        for item in coordinator.data or []:
+            if item["id"] not in known_ids:
+                known_ids.add(item["id"])
+                new_items.append(item)
+        if new_items:
+            async_add_entities(
+                IntradelSensor(coordinator, item["id"], item["name"]) for item in new_items
+            )
+
+    _async_add_new_sensors()
+    entry.async_on_unload(coordinator.async_add_listener(_async_add_new_sensors))
 
 
 class IntradelSensor(CoordinatorEntity[IntradelCoordinator], SensorEntity):
     """Intradel sensor."""
 
     _attr_attribution = "Data provided by Intradel"
-    # Yearly cumulative value that resets at the start of each year.
-    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_has_entity_name = True
 
-    def __init__(self, coordinator: IntradelCoordinator, data_id: str) -> None:
+    def __init__(self, coordinator: IntradelCoordinator, data_id: str, name: str) -> None:
         """Initialize entity."""
         super().__init__(coordinator)
         self._data_id = data_id
+        is_recyparc = data_id == RECYPARC_ID
+        self.entity_description = RECYPARC_DESCRIPTION if is_recyparc else BIN_DESCRIPTION
         self._attr_unique_id = f"{DOMAIN}_{data_id}"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, data_id)},
+            name=name,
+            manufacturer=MANUFACTURER,
+            model="Recypark" if is_recyparc else "Bin",
+        )
 
     @property
     def _data(self) -> dict[str, Any]:
@@ -82,39 +123,9 @@ class IntradelSensor(CoordinatorEntity[IntradelCoordinator], SensorEntity):
             return None
 
     @property
-    def device_class(self) -> SensorDeviceClass | None:
-        """Return the device class (weight for bins, none for recypark)."""
-        return None if self.name == _RECYPARC else SensorDeviceClass.WEIGHT
-
-    @property
-    def native_unit_of_measurement(self) -> str | None:
-        """Return the unit of measurement of this entity, if any."""
-        return None if self.name == _RECYPARC else UnitOfMass.KILOGRAMS
-
-    @property
-    def name(self) -> str | None:
-        """Return the name of the entity."""
-        return self._data.get("name")
-
-    @property
     def extra_state_attributes(self) -> Mapping[str, Any] | None:
         """Return entity specific state attributes."""
         return {
             ATTR_START_DATE: self._data.get("start_date"),
-            "details": self._data.get("details"),
+            ATTR_DETAILS: self._data.get("details"),
         }
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device specific attributes."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._data_id)},
-            name=self.name,
-            manufacturer=DOMAIN,
-            model="Recypark" if self.name == _RECYPARC else "Bin",
-        )
-
-    @property
-    def icon(self) -> str | None:
-        """Return the icon to use in the frontend, if any."""
-        return "mdi:recycle" if self.name == _RECYPARC else "mdi:trash-can"
