@@ -21,6 +21,11 @@ CONF_COOKIE = "cookie"
 CONF_KEEPALIVE_INTERVAL = "keepalive_interval"
 DEFAULT_KEEPALIVE_INTERVAL = 15
 
+MANUFACTURER = "Intradel"
+# Id pyintradel gives the recypark item (it has no chip, so its name is used).
+RECYPARC_ID = "RECYPARC"
+
 ATTR_START_DATE = "start_date"
+ATTR_DETAILS = "details"
 ATTR_BIN_COLLECTIONS = "collections"
 ATTR_CHIP = "chip"

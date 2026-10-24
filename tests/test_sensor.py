@@ -8,12 +8,20 @@ from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorStateClass,
 )
-from homeassistant.const import ATTR_DEVICE_CLASS, ATTR_UNIT_OF_MEASUREMENT, UnitOfMass
+from homeassistant.const import (
+    ATTR_DEVICE_CLASS,
+    ATTR_FRIENDLY_NAME,
+    ATTR_UNIT_OF_MEASUREMENT,
+    STATE_UNAVAILABLE,
+    UnitOfMass,
+)
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
-from custom_components.intradel.const import DOMAIN
+from custom_components.intradel import async_remove_config_entry_device
+from custom_components.intradel.const import DOMAIN, MANUFACTURER
 
 from .const import SAMPLE_DATA
 
@@ -78,3 +86,121 @@ async def test_sensor_value_updates_on_refresh(
     await hass.async_block_till_done()
 
     assert hass.states.get(bin_entity).state == "99.0"
+
+
+async def _refresh(hass: HomeAssistant, entry: MockConfigEntry, data: list) -> None:
+    entry.runtime_data.async_set_updated_data(data)
+    await hass.async_block_till_done()
+
+
+async def test_entities_are_named_after_their_device(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """Without a user rename, the friendly name is the label scraped from the site."""
+    ent_reg = await _setup(hass, mock_config_entry)
+    entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_123456")
+    assert entity_id == "sensor.organique"
+
+    assert hass.states.get(entity_id).attributes[ATTR_FRIENDLY_NAME] == "ORGANIQUE"
+    device = dr.async_get(hass).async_get_device(identifiers={(DOMAIN, "123456")})
+    assert device is not None
+    assert device.name == "ORGANIQUE"
+    assert device.manufacturer == MANUFACTURER
+
+
+async def test_renamed_entity_keeps_its_name(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A name chosen by the user in the registry wins over the device name."""
+    ent_reg = await _setup(hass, mock_config_entry)
+    entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_123456")
+    ent_reg.async_update_entity(entity_id, name="Poubelle verte")
+    await hass.config_entries.async_reload(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    assert hass.states.get(entity_id).attributes[ATTR_FRIENDLY_NAME] == "Poubelle verte"
+
+
+async def test_recypark_is_recognised_by_id_not_by_label(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A relabelled recypark must not turn into a weight sensor."""
+    relabelled = copy.deepcopy(SAMPLE_DATA)
+    relabelled[1]["name"] = "Recypark"
+    mock_get_data.return_value = relabelled
+
+    ent_reg = await _setup(hass, mock_config_entry)
+    state = hass.states.get(ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_RECYPARC"))
+
+    assert ATTR_UNIT_OF_MEASUREMENT not in state.attributes
+    assert ATTR_DEVICE_CLASS not in state.attributes
+
+
+async def test_empty_first_payload_creates_entities_later(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """Sensors appear once the site reports items, without a reload."""
+    mock_get_data.return_value = []
+    ent_reg = await _setup(hass, mock_config_entry)
+    assert not er.async_entries_for_config_entry(ent_reg, mock_config_entry.entry_id)
+
+    await _refresh(hass, mock_config_entry, copy.deepcopy(SAMPLE_DATA))
+
+    assert ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_123456") is not None
+    assert ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_RECYPARC") is not None
+
+
+async def test_new_item_gets_a_sensor_and_known_ones_are_not_duplicated(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """Only the item that appeared is added; the existing ones keep their entity."""
+    mock_get_data.return_value = SAMPLE_DATA[:1]
+    ent_reg = await _setup(hass, mock_config_entry)
+    assert len(er.async_entries_for_config_entry(ent_reg, mock_config_entry.entry_id)) == 1
+
+    await _refresh(hass, mock_config_entry, copy.deepcopy(SAMPLE_DATA))
+    await _refresh(hass, mock_config_entry, copy.deepcopy(SAMPLE_DATA))
+
+    assert len(er.async_entries_for_config_entry(ent_reg, mock_config_entry.entry_id)) == 2
+
+
+async def test_item_missing_from_payload_becomes_unavailable(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A vanished item is reported as unavailable, not as a stale value."""
+    ent_reg = await _setup(hass, mock_config_entry)
+    entity_id = ent_reg.async_get_entity_id("sensor", DOMAIN, f"{DOMAIN}_123456")
+
+    await _refresh(hass, mock_config_entry, copy.deepcopy(SAMPLE_DATA[1:]))
+
+    assert hass.states.get(entity_id).state == STATE_UNAVAILABLE
+
+
+async def test_only_stale_devices_can_be_removed(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+) -> None:
+    """A device still reported by the site is kept; a vanished one may be deleted."""
+    await _setup(hass, mock_config_entry)
+    dev_reg = dr.async_get(hass)
+    bin_device = dev_reg.async_get_device(identifiers={(DOMAIN, "123456")})
+    assert bin_device is not None
+
+    assert not await async_remove_config_entry_device(hass, mock_config_entry, bin_device)
+
+    await _refresh(hass, mock_config_entry, copy.deepcopy(SAMPLE_DATA[1:]))
+
+    assert await async_remove_config_entry_device(hass, mock_config_entry, bin_device)
