@@ -14,7 +14,9 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Only superseded PR pushes: master pushes and the daily run share this group and must not cancel
+  # each other.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   hacs:
@@ -37,5 +39,5 @@ jobs:
           persist-credentials: false
 
       - name: Hassfest validation
-        # No releases are published: pinned to a commit of master, bumped by Dependabot.
+        # Its only release (1.0.0, 2020) is far behind master: pinned to a commit of master instead.
         uses: home-assistant/actions/hassfest@cd6f3635a740c84d8a14f6121a90068b8ece6bf6 # master
