@@ -27,11 +27,17 @@ jobs:
         with:
           python-version: "3.13"
           cache: pip
-          cache-dependency-path: requirements_test.txt
+          cache-dependency-path: |
+            requirements_test.txt
+            hacs.json
 
+      # Home Assistant's own pins for the hacs.json minimum: the dependency versions real installs
+      # get, and no pip backtracking (about 40s of resolving otherwise).
       - name: Install dependencies
         id: install
-        run: python -m pip install -r requirements_test.txt
+        run: |
+          constraints="https://raw.githubusercontent.com/home-assistant/core/$(jq -r .homeassistant hacs.json)/homeassistant/package_constraints.txt"
+          python -m pip install -r requirements_test.txt -c "$constraints"
 
       # Each check runs even if a previous one failed, but not when the install itself failed.
       - name: Lint with ruff

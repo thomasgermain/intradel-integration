@@ -61,11 +61,13 @@ The attribute `start_date` is basically 01-01 of the current year.
 ## Development
 
 Requires Python 3.13. Tests run against the minimum supported Home Assistant (`hacs.json`),
-pinned through `pytest-homeassistant-custom-component` in `requirements_test.txt`:
+pinned through `pytest-homeassistant-custom-component` in `requirements_test.txt`, with that
+Home Assistant release's own dependency constraints:
 
 ```bash
 python3.13 -m venv .venv && . .venv/bin/activate
-pip install -r requirements_test.txt
+pip install -r requirements_test.txt \
+  -c "https://raw.githubusercontent.com/home-assistant/core/$(jq -r .homeassistant hacs.json)/homeassistant/package_constraints.txt"
 pytest
 ruff check
 ruff format
