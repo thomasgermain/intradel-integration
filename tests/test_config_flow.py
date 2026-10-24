@@ -4,10 +4,12 @@ Only a session cookie can authenticate: the login form is gated behind a
 reCAPTCHA the site verifies server-side, so no login/password step exists.
 """
 
+from datetime import timedelta
 from unittest.mock import AsyncMock, patch
 
 import aiohttp
 import pytest
+import voluptuous as vol
 from homeassistant.config_entries import SOURCE_USER
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
@@ -24,6 +26,9 @@ from custom_components.intradel.const import (
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_KEEPALIVE_INTERVAL,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
 )
 
 from .const import COOKIE_INPUT, SAMPLE_DATA
@@ -237,6 +242,54 @@ async def test_options_flow(
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert mock_config_entry.options == user_input
+    # Whole minutes: the selector yields floats, which must not leak into the options.
+    assert all(type(value) is int for value in mock_config_entry.options.values())
+
+
+async def test_options_flow_reloads_the_entry(
+    hass: HomeAssistant, mock_config_entry: MockConfigEntry, mock_get_data: AsyncMock
+) -> None:
+    """New options take effect without a manual reload."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+    assert mock_config_entry.runtime_data.update_interval == timedelta(
+        minutes=DEFAULT_SCAN_INTERVAL
+    )
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    await hass.config_entries.options.async_configure(
+        result["flow_id"], {CONF_SCAN_INTERVAL: 120, CONF_KEEPALIVE_INTERVAL: 0}
+    )
+    await hass.async_block_till_done()
+
+    assert mock_config_entry.runtime_data.update_interval == timedelta(minutes=120)
+
+
+@pytest.mark.parametrize(
+    "user_input",
+    [
+        # below the one-hour minimum (0 would silently stop the polling)
+        {CONF_SCAN_INTERVAL: MIN_SCAN_INTERVAL - 1, CONF_KEEPALIVE_INTERVAL: 15},
+        {CONF_SCAN_INTERVAL: MAX_SCAN_INTERVAL + 1, CONF_KEEPALIVE_INTERVAL: 15},
+        {CONF_SCAN_INTERVAL: 720, CONF_KEEPALIVE_INTERVAL: -1},
+        {CONF_SCAN_INTERVAL: 720, CONF_KEEPALIVE_INTERVAL: MAX_KEEPALIVE_INTERVAL + 1},
+    ],
+)
+async def test_options_flow_rejects_out_of_range_intervals(
+    hass: HomeAssistant,
+    mock_config_entry: MockConfigEntry,
+    mock_get_data: AsyncMock,
+    user_input: dict[str, int],
+) -> None:
+    """Intervals outside their bounds are refused instead of silently accepted."""
+    mock_config_entry.add_to_hass(hass)
+    assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
+    await hass.async_block_till_done()
+
+    result = await hass.config_entries.options.async_init(mock_config_entry.entry_id)
+    with pytest.raises(vol.Invalid):
+        await hass.config_entries.options.async_configure(result["flow_id"], user_input)
 
 
 async def test_options_flow_defaults(

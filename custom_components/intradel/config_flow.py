@@ -14,13 +14,17 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlow,
+    OptionsFlowWithReload,
 )
 from homeassistant.const import CONF_SCAN_INTERVAL
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
-from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
+)
 from pyintradel.api import AuthenticationError, IntradelError, get_data
 
 from .const import (
@@ -29,6 +33,9 @@ from .const import (
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    MAX_KEEPALIVE_INTERVAL,
+    MAX_SCAN_INTERVAL,
+    MIN_SCAN_INTERVAL,
     REQUEST_TIMEOUT,
 )
 
@@ -57,6 +64,20 @@ async def validate_authentication(hass: HomeAssistant, cookie: str) -> None:
     except (IntradelError, aiohttp.ClientError, TimeoutError) as err:
         _LOGGER.debug("Unable to fetch intradel data: %s", err)
         raise CannotConnect from err
+
+
+def _minutes(minimum: int, maximum: int) -> vol.All:
+    """A whole number of minutes within bounds (the selector yields a float)."""
+    selector = NumberSelector(
+        NumberSelectorConfig(
+            min=minimum,
+            max=maximum,
+            step=1,
+            mode=NumberSelectorMode.BOX,
+            unit_of_measurement="min",
+        )
+    )
+    return vol.All(selector, vol.Coerce(int))
 
 
 class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -121,8 +142,8 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
         return await self._async_cookie_form("reauth_confirm", user_input)
 
 
-class IntradelOptionsFlowHandler(OptionsFlow):
-    """Handle an option flow."""
+class IntradelOptionsFlowHandler(OptionsFlowWithReload):
+    """Handle an option flow; the entry reloads itself when its options change."""
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle options flow."""
@@ -135,11 +156,11 @@ class IntradelOptionsFlowHandler(OptionsFlow):
                 vol.Optional(
                     CONF_SCAN_INTERVAL,
                     default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
-                ): cv.positive_int,
+                ): _minutes(MIN_SCAN_INTERVAL, MAX_SCAN_INTERVAL),
                 vol.Optional(
                     CONF_KEEPALIVE_INTERVAL,
                     default=options.get(CONF_KEEPALIVE_INTERVAL, DEFAULT_KEEPALIVE_INTERVAL),
-                ): cv.positive_int,
+                ): _minutes(0, MAX_KEEPALIVE_INTERVAL),
             }
         )
         return self.async_show_form(step_id="init", data_schema=data_schema)

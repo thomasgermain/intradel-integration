@@ -8,6 +8,8 @@ COOKIE_DOMAIN = "intradel.be"
 PLATFORMS = [Platform.SENSOR]
 
 DEFAULT_SCAN_INTERVAL = 720
+MIN_SCAN_INTERVAL = 60
+MAX_SCAN_INTERVAL = 10080  # one week
 
 # Seconds before a request to the site is given up on; aiohttp's own default is 5 minutes.
 REQUEST_TIMEOUT = 30
@@ -20,6 +22,7 @@ CONF_COOKIE = "cookie"
 # Minutes between session keep-alive pings for cookie-based entries; 0 disables.
 CONF_KEEPALIVE_INTERVAL = "keepalive_interval"
 DEFAULT_KEEPALIVE_INTERVAL = 15
+MAX_KEEPALIVE_INTERVAL = 1440  # one day
 
 MANUFACTURER = "Intradel"
 # Id pyintradel gives the recypark item (it has no chip, so its name is used).

@@ -32,7 +32,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: IntradelConfigEntry) -> 
     entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
     _async_setup_keepalive(hass, entry, coordinator)
 
     return True
@@ -59,11 +58,6 @@ def _async_setup_keepalive(
         entry.async_start_reauth(hass)
 
     entry.async_on_unload(async_track_time_interval(hass, _async_ping, timedelta(minutes=minutes)))
-
-
-async def _async_update_listener(hass: HomeAssistant, entry: IntradelConfigEntry) -> None:
-    """Reload the entry when its options are updated."""
-    await hass.config_entries.async_reload(entry.entry_id)
 
 
 async def async_remove_config_entry_device(
