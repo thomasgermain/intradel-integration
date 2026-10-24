@@ -39,6 +39,8 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
             config_entry=entry,
             name=DOMAIN,
             update_interval=update_interval,
+            # Plain lists of dicts compare by value: no state write when nothing changed.
+            always_update=False,
         )
         # Dedicated session: its own (isolated) cookie jar avoids sharing the
         # Intradel login cookie with the global HA session, while reusing HA's
