@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import Mapping
 from typing import Any
 
+import aiohttp
 import voluptuous as vol
 from homeassistant.config_entries import (
+    SOURCE_REAUTH,
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
@@ -26,6 +29,7 @@ from .const import (
     DEFAULT_KEEPALIVE_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    REQUEST_TIMEOUT,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -43,13 +47,15 @@ async def validate_authentication(hass: HomeAssistant, cookie: str) -> None:
     session = async_get_clientsession(hass)
 
     try:
-        if not await get_data(session, cookie=cookie):
-            raise InvalidAuth
+        async with asyncio.timeout(REQUEST_TIMEOUT):
+            if not await get_data(session, cookie=cookie):
+                raise InvalidAuth
     except AuthenticationError as err:
-        _LOGGER.error("Unable to authenticate: %s", err)
+        _LOGGER.debug("Unable to authenticate: %s", err)
         raise InvalidAuth from err
-    except IntradelError as err:
-        _LOGGER.error("Unable to fetch intradel data: %s", err)
+    # pyintradel does not wrap transport errors, only its own IntradelError family.
+    except (IntradelError, aiohttp.ClientError, TimeoutError) as err:
+        _LOGGER.debug("Unable to fetch intradel data: %s", err)
         raise CannotConnect from err
 
 
@@ -86,7 +92,7 @@ class IntradelConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "unknown"
             else:
                 data = {CONF_COOKIE: user_input[CONF_COOKIE]}
-                if self.source == "reauth":
+                if self.source == SOURCE_REAUTH:
                     # Full replace, not data_updates: drops the leftover
                     # login/password/town of an entry created before the
                     # login/password method was removed.

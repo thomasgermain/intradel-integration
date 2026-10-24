@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from datetime import timedelta
 from typing import Any
@@ -14,7 +15,7 @@ from homeassistant.helpers.aiohttp_client import async_create_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pyintradel.api import AuthenticationError, IntradelError, get_data
 
-from .const import CONF_COOKIE, DOMAIN
+from .const import CONF_COOKIE, DOMAIN, REQUEST_TIMEOUT
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -63,7 +64,8 @@ class IntradelCoordinator(DataUpdateCoordinator[list[dict[str, Any]]]):
             )
         try:
             # pyintradel types its return as list[Any]; narrow it for consumers.
-            data: list[dict[str, Any]] = await get_data(self._session, cookie=cookie)
+            async with asyncio.timeout(REQUEST_TIMEOUT):
+                data: list[dict[str, Any]] = await get_data(self._session, cookie=cookie)
         except AuthenticationError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except IntradelError as err:

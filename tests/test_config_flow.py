@@ -110,6 +110,9 @@ async def test_validate_authentication_clears_previous_cookie(hass: HomeAssistan
         (None, [], "invalid_auth"),
         (ApiError(500), None, "cannot_connect"),
         (ParseError("Unexpected response structure from intradel"), None, "cannot_connect"),
+        # Transport errors are not wrapped by pyintradel.
+        (aiohttp.ClientConnectionError("down"), None, "cannot_connect"),
+        (TimeoutError(), None, "cannot_connect"),
         (RuntimeError("boom"), None, "unknown"),
     ],
 )
